@@ -1,0 +1,22 @@
+:root {
+  /* Header color */
+  --color-brand: #111827;
+  /* Application color*/
+  --color-canvas: #f3f4f6;
+  /*Panel color*/
+  --color-surface: #fff;
+  /*The subtle line separating the panel header from content*/
+  --color-border: #e5e7eb;
+  /*Main text color*/
+  --color-text: #1f2937;
+
+  /* Business logic color*/
+  --color-debit: #2e7d32;
+  --color-credit: #d32f2f;
+
+  /* Spacing Scaling */
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-16: 16px;
+  --space-24: 24px;
+}

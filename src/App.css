@@ -1,0 +1,28 @@
+.app-container {
+  min-height: 100vh;
+}
+
+.app-header {
+  background-color: var(--color-brand);
+  color: white;
+  padding: var(--space-16) var(--space-24);
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.app-grid {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: var(--space-24);
+  padding: var(--space-8);
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .app-grid {
+    grid-template-columns: 1fr;
+  }
+}
