@@ -1,7 +1,7 @@
 import type { EntryDto } from "../../../shared/api/types.ts";
+import { formatDate } from "../../../shared/date/formatDate.ts";
 import { formatMoney } from "../../../shared/money/formatMoney.ts";
 import styles from "./EntriesPanel.module.css";
-import {formatDate} from "../../../shared/date/formatDate.ts";
 
 type EntriesPanelProps = {
   entries: readonly EntryDto[];
