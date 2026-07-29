@@ -4,9 +4,12 @@ import styles from "./AccountsTable.module.css";
 
 type AccountsTableProps = {
   accounts: readonly AccountDto[];
+  selectedAccountId: string;
+  onSelect: (id: string) => void;
 };
 
-const AccountsTable = ({ accounts }: AccountsTableProps) => {
+const AccountsTable = ({ accounts, selectedAccountId, onSelect }: AccountsTableProps) => {
+  console.log("Table rendered");
   const sortedAccounts = accounts.toSorted((a, b) => a.name.localeCompare(b.name));
   return (
     <table className={styles.table}>
@@ -21,7 +24,11 @@ const AccountsTable = ({ accounts }: AccountsTableProps) => {
       </thead>
       <tbody>
         {sortedAccounts.map((acc) => (
-          <tr key={acc.id}>
+          <tr
+            key={acc.id}
+            onClick={() => onSelect(acc.id)}
+            className={acc.id === selectedAccountId ? styles.selectedRow : ""}
+          >
             <td>{acc.name}</td>
             <td>{acc.currency}</td>
             <td className={acc.balanceMinorUnits < 0 ? styles.negative : styles.balance}>

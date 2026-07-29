@@ -5,14 +5,13 @@ import styles from "./EntriesPanel.module.css";
 
 type EntriesPanelProps = {
   entries: readonly EntryDto[];
+  selectedAccountId: string;
 };
 
-const EntriesPanel = ({ entries }: EntriesPanelProps) => {
-  // LCX-1: State marker
-  const activeAccountId = "acc-cash";
-
+const EntriesPanel = ({ entries, selectedAccountId }: EntriesPanelProps) => {
+  console.log("Entries rendered");
   const activeEntries = entries
-    .filter((entry) => entry.accountId === activeAccountId)
+    .filter((entry) => entry.accountId === selectedAccountId)
     .toSorted((a, b) => b.occurredAt.localeCompare(a.occurredAt));
 
   return (
