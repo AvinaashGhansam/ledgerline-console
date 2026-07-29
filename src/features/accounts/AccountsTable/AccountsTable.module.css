@@ -1,0 +1,28 @@
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.table th {
+  padding: var(--space-8) var(--space-8);
+  border-bottom: 2px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.table td {
+  padding: var(--space-16) var(--space-8);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.numeric,
+.balance,
+.negative {
+  text-align: right;
+}
+
+.negative {
+  color: var(--color-negative);
+}
