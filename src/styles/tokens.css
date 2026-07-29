@@ -14,9 +14,13 @@
   --color-debit: #2e7d32;
   --color-credit: #d32f2f;
 
+  --color-text-muted: #2e7d32;
+  --color-negative: #d32f2f;
+
   /* Spacing Scaling */
   --space-4: 4px;
   --space-8: 8px;
+  --space-12: 12px;
   --space-16: 16px;
   --space-24: 24px;
 }
