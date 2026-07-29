@@ -1,12 +1,12 @@
-import type { AccountDto } from "../../shared/api/types.ts";
+import type { AccountDto } from "../../../shared/api/types.ts";
+import { formatMoney } from "../../../shared/money/formatMoney.ts";
 import styles from "./AccountsTable.module.css";
-import { formatMoney } from "../../shared/money/formatMoney.ts";
 
-type AccountTableProps = {
+type AccountsTableProps = {
   accounts: readonly AccountDto[];
 };
 
-const AccountsTable = ({ accounts }: AccountTableProps) => {
+const AccountsTable = ({ accounts }: AccountsTableProps) => {
   const sortedAccounts = accounts.toSorted((a, b) => a.name.localeCompare(b.name));
   return (
     <table className={styles.table}>
@@ -14,7 +14,9 @@ const AccountsTable = ({ accounts }: AccountTableProps) => {
         <tr>
           <th scope="col">Name</th>
           <th scope="col">Currency</th>
-          <th scope="col" className={styles.numeric}>Balance</th>
+          <th scope="col" className={styles.numeric}>
+            Balance
+          </th>
         </tr>
       </thead>
       <tbody>
