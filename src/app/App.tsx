@@ -2,11 +2,12 @@ import { useState } from "react";
 import Panel from "../components/Panel/Panel.tsx";
 import AccountsTable from "../features/accounts/AccountsTable/AccountsTable.tsx";
 import EntriesPanel from "../features/entries/EntriesPanel/EntriesPanel.tsx";
-import { accounts, entries } from "../mocks/fixtures.ts";
+import { accounts, entries as ledgerEntries } from "../mocks/fixtures.ts";
 import styles from "./App.module.css";
 
 function App() {
   const [selectedAccountId, setSelectedAccountId] = useState("acc-cash");
+  const [entries, setEntries] = useState(ledgerEntries);
 
   const activeAccount = accounts.find((account) => account.id === selectedAccountId);
 
