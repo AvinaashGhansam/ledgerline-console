@@ -9,7 +9,6 @@ type AccountsTableProps = {
 };
 
 const AccountsTable = ({ accounts, selectedAccountId, onSelect }: AccountsTableProps) => {
-  console.log("Table rendered");
   const sortedAccounts = accounts.toSorted((a, b) => a.name.localeCompare(b.name));
   return (
     <table className={styles.table}>

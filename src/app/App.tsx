@@ -1,15 +1,18 @@
+import { useState } from "react";
 import Panel from "../components/Panel/Panel.tsx";
 import AccountsTable from "../features/accounts/AccountsTable/AccountsTable.tsx";
 import EntriesPanel from "../features/entries/EntriesPanel/EntriesPanel.tsx";
 import { accounts, entries } from "../mocks/fixtures.ts";
 import styles from "./App.module.css";
-import { useState } from "react";
 
 function App() {
   const [selectedAccountId, setSelectedAccountId] = useState("acc-cash");
+
   const activeAccount = accounts.find((account) => account.id === selectedAccountId);
 
-  console.log("App rendered");
+  const activeEntries = entries
+    .filter((entry) => entry.accountId === selectedAccountId)
+    .toSorted((a, b) => b.occurredAt.localeCompare(a.occurredAt));
 
   const handleSelectAccount = (id: string) => {
     setSelectedAccountId(id);
@@ -29,7 +32,7 @@ function App() {
           />
         </Panel>
         <Panel title={activeAccount ? `Entries — ${activeAccount.name}` : "Entries"}>
-          <EntriesPanel entries={entries} selectedAccountId={selectedAccountId} />
+          <EntriesPanel entries={activeEntries} />
         </Panel>
       </main>
     </div>

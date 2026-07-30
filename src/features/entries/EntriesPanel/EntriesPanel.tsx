@@ -5,18 +5,17 @@ import styles from "./EntriesPanel.module.css";
 
 type EntriesPanelProps = {
   entries: readonly EntryDto[];
-  selectedAccountId: string;
 };
 
-const EntriesPanel = ({ entries, selectedAccountId }: EntriesPanelProps) => {
-  console.log("Entries rendered");
-  const activeEntries = entries
-    .filter((entry) => entry.accountId === selectedAccountId)
-    .toSorted((a, b) => b.occurredAt.localeCompare(a.occurredAt));
+const EntriesPanel = ({ entries }: EntriesPanelProps) => {
+  // Opted for Option B (hoisted filtering): Keeps this component perfectly pure for testing and scales better as the app grows.
+  if (entries.length === 0) {
+    return <div className={styles.emptyState}>No Transactions found for this account</div>;
+  }
 
   return (
     <ul className={styles.list}>
-      {activeEntries.map((activeEntry) => (
+      {entries.map((activeEntry) => (
         <li key={activeEntry.id} className={styles.entryRow}>
           <div className={styles.entryHeader}>
             <span className={styles.date}>{formatDate(activeEntry.occurredAt)}</span>
