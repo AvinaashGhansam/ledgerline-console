@@ -2,6 +2,7 @@ import { useState } from "react";
 import Panel from "../components/Panel/Panel.tsx";
 import AccountsTable from "../features/accounts/AccountsTable/AccountsTable.tsx";
 import EntriesPanel from "../features/entries/EntriesPanel/EntriesPanel.tsx";
+import TransferForm from "../features/postings/TransferForm/TransferForm.tsx";
 import { accounts, entries as ledgerEntries } from "../mocks/fixtures.ts";
 import styles from "./App.module.css";
 
@@ -34,6 +35,9 @@ function App() {
         </Panel>
         <Panel title={activeAccount ? `Entries — ${activeAccount.name}` : "Entries"}>
           <EntriesPanel entries={activeEntries} />
+        </Panel>
+        <Panel title="New Transfer">
+          <TransferForm accounts={accounts} />
         </Panel>
       </main>
     </div>
