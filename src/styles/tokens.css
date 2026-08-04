@@ -16,7 +16,9 @@
 
   --color-text-muted: #6b7280;
   --color-negative: #d32f2f;
-
+  --color-error: #d32f2f;
+  --color-primary: #000;
+  --color-btn-text: #fff;
   --color-surface-hover: #f3f4f6;
   /* Spacing Scaling */
   --space-4: 4px;

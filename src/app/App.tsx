@@ -23,7 +23,7 @@ function App() {
   return (
     <div className={styles.appContainer}>
       <header className={styles.appHeader}>
-        <h1>Ledgerline Console [LCX-0]</h1>
+        <h1>Ledgerline Console [LCX-1]</h1>
       </header>
       <main className={styles.appGrid}>
         <Panel title="Accounts">

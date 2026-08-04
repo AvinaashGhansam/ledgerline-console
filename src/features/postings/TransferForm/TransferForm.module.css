@@ -30,3 +30,39 @@
 .input:focus {
   border-color: var(--color-text);
 }
+
+.error {
+  color: var(--color-error);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: var(--space-8);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+/*Submit btn*/
+.button {
+  margin-top: var(--space-16);
+  padding: var(--space-12) var(--space-24);
+  background-color: var(--color-primary);
+  color: var(--color-btn-text);
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+/* Hover state (only applies when NOT disabled) */
+.button:hover:not(:disabled) {
+  opacity: 0.8;
+}
+
+.button:disabled {
+  background-color: var(--color-border);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
