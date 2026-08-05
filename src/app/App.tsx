@@ -4,6 +4,7 @@ import AccountsTable from "../features/accounts/AccountsTable/AccountsTable.tsx"
 import EntriesPanel from "../features/entries/EntriesPanel/EntriesPanel.tsx";
 import TransferForm from "../features/postings/TransferForm/TransferForm.tsx";
 import { accounts, entries as ledgerEntries } from "../mocks/fixtures.ts";
+import type { EntryDto } from "../shared/api/types.ts";
 import styles from "./App.module.css";
 
 function App() {
@@ -18,6 +19,10 @@ function App() {
 
   const handleSelectAccount = (id: string) => {
     setSelectedAccountId(id);
+  };
+
+  const handleAddEntries = (newEntries: EntryDto[]) => {
+    setEntries((prevEntry) => [...prevEntry, ...newEntries]);
   };
 
   return (
@@ -37,7 +42,7 @@ function App() {
           <EntriesPanel entries={activeEntries} />
         </Panel>
         <Panel title="New Transfer">
-          <TransferForm accounts={accounts} />
+          <TransferForm accounts={accounts} onAdd={handleAddEntries} />
         </Panel>
       </main>
     </div>

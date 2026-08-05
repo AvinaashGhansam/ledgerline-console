@@ -1,5 +1,5 @@
 import { type ChangeEvent, useState } from "react";
-import type { AccountDto } from "../../../shared/api/types.ts";
+import type { AccountDto, EntryDto } from "../../../shared/api/types.ts";
 import { parseMoney } from "../../../shared/money/parseMoney.ts";
 import styles from "./TransferForm.module.css";
 
@@ -12,21 +12,63 @@ type FormType = {
 
 type TransferFormProps = {
   accounts: readonly AccountDto[];
+  onAdd: (entries: EntryDto[]) => void;
 };
 
-const TransferForm = ({ accounts }: TransferFormProps) => {
-  const [form, setForm] = useState<FormType>({
-    fromAccountId: "",
-    toAccountId: "",
-    amount: "",
-    memo: "",
-  });
+const INITIAL_FORM_STATE: FormType = { fromAccountId: "", toAccountId: "", amount: "", memo: "" };
 
+const TransferForm = ({ accounts, onAdd }: TransferFormProps) => {
+  const [form, setForm] = useState<FormType>(INITIAL_FORM_STATE);
   const isDirty = form.fromAccountId !== "" || form.toAccountId !== "" || form.amount !== "";
+  const parsedMoney = parseMoney(form.amount);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prevData) => ({ ...prevData, [name]: value }));
+  };
+
+  const handleSubmit = () => {
+    if (errorMessage) {
+      return;
+    }
+    const postingId = crypto.randomUUID();
+    const occurredAt = new Date().toISOString();
+
+    let amountMinorUnits = 0;
+    if (parsedMoney.ok) {
+      amountMinorUnits = parsedMoney.value;
+    }
+
+    const currency = accounts.find((acc) => acc.id === form.fromAccountId)?.currency;
+
+    if (!currency) {
+      return;
+    }
+
+    const debit: EntryDto = {
+      id: crypto.randomUUID(),
+      accountId: form.fromAccountId,
+      postingId,
+      direction: "DEBIT",
+      amountMinorUnits,
+      currency,
+      occurredAt,
+      memo: form.memo,
+    };
+
+    const credit: EntryDto = {
+      id: crypto.randomUUID(),
+      accountId: form.toAccountId,
+      postingId,
+      direction: "CREDIT",
+      amountMinorUnits,
+      currency,
+      occurredAt,
+      memo: form.memo,
+    };
+
+    onAdd([debit, credit]);
+    setForm(INITIAL_FORM_STATE);
   };
 
   const getErrorMessage = () => {
@@ -45,13 +87,11 @@ const TransferForm = ({ accounts }: TransferFormProps) => {
       return "Accounts must have the same currency.";
     }
 
-    const money = parseMoney(form.amount);
-
-    if (!money.ok) {
-      return money.reason;
+    if (!parsedMoney.ok) {
+      return parsedMoney.reason;
     }
 
-    if (money.value <= 0) {
+    if (parsedMoney.value <= 0) {
       return "Transfer amount must be greater than zero.";
     }
 
@@ -129,7 +169,12 @@ const TransferForm = ({ accounts }: TransferFormProps) => {
         />
       </div>
       {isDirty && errorMessage && <p className={styles.error}>{errorMessage}</p>}
-      <button className={styles.button} type="button" disabled={!!errorMessage}>
+      <button
+        className={styles.button}
+        type="button"
+        disabled={!!errorMessage}
+        onClick={handleSubmit}
+      >
         Add Transfer
       </button>
     </form>
