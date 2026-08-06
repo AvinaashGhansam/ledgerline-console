@@ -13,16 +13,18 @@ const AccountsTable = ({ accounts, selectedAccountId, onSelect }: AccountsTableP
   const sortedAccounts = accounts.toSorted((a, b) => a.name.localeCompare(b.name));
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTableRowElement>, id: string) => {
-    if (e.key === " ") {
-      e.preventDefault();
+    if (e.key === "Enter" || e.key === " ") {
+      if (e.key === " ") {
+        e.preventDefault();
+      }
+      onSelect(id);
     }
-    onSelect(id);
   };
 
   return (
     <table className={styles.table}>
       <thead>
-        <tr tabIndex={0}>
+        <tr>
           <th scope="col">Name</th>
           <th scope="col">Currency</th>
           <th scope="col" className={styles.numeric}>

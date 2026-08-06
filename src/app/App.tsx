@@ -25,6 +25,24 @@ function App() {
     setEntries((prevEntry) => [...prevEntry, ...newEntries]);
   };
 
+  const newEntries = entries.slice(ledgerEntries.length);
+  const derivedAccounts = accounts.map((acc) => {
+    const sum = newEntries
+      .filter((entry) => entry.accountId === acc.id)
+      .reduce((runningTotal, currEntry) => {
+        // Check the direction to decide if we add or subtract!
+        if (currEntry.direction === "CREDIT") {
+          return runningTotal + currEntry.amountMinorUnits;
+        } else {
+          return runningTotal - currEntry.amountMinorUnits;
+        }
+      }, 0);
+    return {
+      ...acc,
+      balanceMinorUnits: acc.balanceMinorUnits + sum,
+    };
+  });
+
   return (
     <div className={styles.appContainer}>
       <header className={styles.appHeader}>
@@ -33,7 +51,7 @@ function App() {
       <main className={styles.appGrid}>
         <Panel title="Accounts">
           <AccountsTable
-            accounts={accounts}
+            accounts={derivedAccounts}
             selectedAccountId={selectedAccountId}
             onSelect={handleSelectAccount}
           />

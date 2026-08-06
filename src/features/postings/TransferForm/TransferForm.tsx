@@ -1,4 +1,4 @@
-import { type ChangeEvent, useState } from "react";
+import { type ChangeEvent, type SubmitEvent, useState } from "react";
 import type { AccountDto, EntryDto } from "../../../shared/api/types.ts";
 import { parseMoney } from "../../../shared/money/parseMoney.ts";
 import styles from "./TransferForm.module.css";
@@ -27,17 +27,21 @@ const TransferForm = ({ accounts, onAdd }: TransferFormProps) => {
     setForm((prevData) => ({ ...prevData, [name]: value }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (e: SubmitEvent) => {
+    e.preventDefault();
+
     if (errorMessage) {
       return;
     }
+
     const postingId = crypto.randomUUID();
     const occurredAt = new Date().toISOString();
 
-    let amountMinorUnits = 0;
-    if (parsedMoney.ok) {
-      amountMinorUnits = parsedMoney.value;
+    if (!parsedMoney.ok) {
+      return;
     }
+
+    const amountMinorUnits = parsedMoney.value;
 
     const currency = accounts.find((acc) => acc.id === form.fromAccountId)?.currency;
 
@@ -114,7 +118,7 @@ const TransferForm = ({ accounts, onAdd }: TransferFormProps) => {
   );
 
   return (
-    <form className={styles.form}>
+    <form className={styles.form} onSubmit={handleSubmit}>
       <div className={styles.formGroup}>
         <label className={styles.label} htmlFor="fromAccountId">
           From Account Number
@@ -169,12 +173,7 @@ const TransferForm = ({ accounts, onAdd }: TransferFormProps) => {
         />
       </div>
       {isDirty && errorMessage && <p className={styles.error}>{errorMessage}</p>}
-      <button
-        className={styles.button}
-        type="button"
-        disabled={!!errorMessage}
-        onClick={handleSubmit}
-      >
+      <button className={styles.button} type="submit" disabled={!!errorMessage}>
         Add Transfer
       </button>
     </form>
