@@ -8,16 +8,14 @@ type EntriesPanelProps = {
 };
 
 const EntriesPanel = ({ entries }: EntriesPanelProps) => {
-  // LCX-1: State marker
-  const activeAccountId = "acc-cash";
-
-  const activeEntries = entries
-    .filter((entry) => entry.accountId === activeAccountId)
-    .toSorted((a, b) => b.occurredAt.localeCompare(a.occurredAt));
+  // Opted for Option B (hoisted filtering): Keeps this component perfectly pure for testing and scales better as the app grows.
+  if (entries.length === 0) {
+    return <div className={styles.emptyState}>No Transactions found for this account</div>;
+  }
 
   return (
     <ul className={styles.list}>
-      {activeEntries.map((activeEntry) => (
+      {entries.map((activeEntry) => (
         <li key={activeEntry.id} className={styles.entryRow}>
           <div className={styles.entryHeader}>
             <span className={styles.date}>{formatDate(activeEntry.occurredAt)}</span>

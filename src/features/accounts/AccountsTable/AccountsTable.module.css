@@ -26,3 +26,11 @@
 .negative {
   color: var(--color-negative);
 }
+
+.selectedRow {
+  background-color: var(--color-surface-hover);
+}
+
+.table tbody tr {
+  cursor: pointer;
+}
