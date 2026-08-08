@@ -1,15 +1,40 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Panel from "../components/Panel/Panel.tsx";
 import AccountsTable from "../features/accounts/AccountsTable/AccountsTable.tsx";
 import EntriesPanel from "../features/entries/EntriesPanel/EntriesPanel.tsx";
 import TransferForm from "../features/postings/TransferForm/TransferForm.tsx";
-import { accounts, entries as ledgerEntries } from "../mocks/fixtures.ts";
-import type { EntryDto } from "../shared/api/types.ts";
+import { entries as ledgerEntries } from "../mocks/fixtures.ts";
+import { getJson, toMessage } from "../shared/api/client.ts";
+import { AccountListSchema } from "../shared/api/schemas.ts";
+import type { AccountDto, EntryDto } from "../shared/api/types.ts";
+import type { RequestState } from "../shared/types.ts";
 import styles from "./App.module.css";
 
 function App() {
   const [selectedAccountId, setSelectedAccountId] = useState("acc-cash");
   const [entries, setEntries] = useState(ledgerEntries);
+  const [accountsState, setAccountsState] = useState<RequestState<AccountDto[]>>({
+    status: "loading",
+  });
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    getJson("/api/accounts", AccountListSchema, controller.signal)
+      .then((data) => {
+        setAccountsState({ status: "success", data });
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        setAccountsState({ status: "error", message: toMessage(err) });
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
+
+  const accounts = accountsState.status === "success" ? accountsState.data : [];
 
   const activeAccount = accounts.find((account) => account.id === selectedAccountId);
 

@@ -19,3 +19,6 @@ export const EntryDtoSchema = z.object({
   occurredAt: z.iso.datetime(),
   memo: z.optional(z.string()),
 });
+
+export const AccountListSchema = z.array(AccountDtoSchema);
+export const EntryListSchema = z.array(EntryDtoSchema);
