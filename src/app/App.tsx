@@ -5,7 +5,7 @@ import EntriesPanel from "../features/entries/EntriesPanel/EntriesPanel.tsx";
 import TransferForm from "../features/postings/TransferForm/TransferForm.tsx";
 import { entries as ledgerEntries } from "../mocks/fixtures.ts";
 import { getJson, toMessage } from "../shared/api/client.ts";
-import { AccountListSchema } from "../shared/api/schemas.ts";
+import { AccountListSchema, EntryListSchema } from "../shared/api/schemas.ts";
 import type { AccountDto, EntryDto } from "../shared/api/types.ts";
 import type { RequestState } from "../shared/types.ts";
 import styles from "./App.module.css";
@@ -16,6 +16,7 @@ function App() {
   const [accountsState, setAccountsState] = useState<RequestState<AccountDto[]>>({
     status: "loading",
   });
+  const [entriesState, setEntriesState] = useState<RequestState<EntryDto[]>>({ status: "loading" });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -34,13 +35,27 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    setEntriesState({ status: "loading" });
+    const controller = new AbortController();
+
+    getJson(`/api/accounts/${selectedAccountId}/entries`, EntryListSchema, controller.signal)
+      .then((data) => {
+        setEntriesState({ status: "success", data });
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        setEntriesState({ status: "error", message: toMessage(err) });
+      });
+    return () => {
+      controller.abort();
+    };
+  }, [selectedAccountId]);
+
   const accounts = accountsState.status === "success" ? accountsState.data : [];
+  const activeEntries = entriesState.status === "success" ? entriesState.data : [];
 
   const activeAccount = accounts.find((account) => account.id === selectedAccountId);
-
-  const activeEntries = entries
-    .filter((entry) => entry.accountId === selectedAccountId)
-    .toSorted((a, b) => b.occurredAt.localeCompare(a.occurredAt));
 
   const handleSelectAccount = (id: string) => {
     setSelectedAccountId(id);
