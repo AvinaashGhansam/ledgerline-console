@@ -17,11 +17,13 @@ function App() {
     status: "loading",
   });
   const [entriesState, setEntriesState] = useState<RequestState<EntryDto[]>>({ status: "loading" });
+  const [accountsRetry, setAccountsRetry] = useState(0);
+  const [entriesRetry, setEntriesRetry] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
 
-    getJson("/api/accounts", AccountListSchema, controller.signal)
+    getJson(`/api/accounts?retry=${accountsRetry}`, AccountListSchema, controller.signal)
       .then((data) => {
         setAccountsState({ status: "success", data });
       })
@@ -33,13 +35,17 @@ function App() {
     return () => {
       controller.abort();
     };
-  }, []);
+  }, [accountsRetry]);
 
   useEffect(() => {
     setEntriesState({ status: "loading" });
     const controller = new AbortController();
 
-    getJson(`/api/accounts/${selectedAccountId}/entries`, EntryListSchema, controller.signal)
+    getJson(
+      `/api/accounts/${selectedAccountId}/entries?retry=${entriesRetry}`,
+      EntryListSchema,
+      controller.signal,
+    )
       .then((data) => {
         setEntriesState({ status: "success", data });
       })
@@ -50,11 +56,9 @@ function App() {
     return () => {
       controller.abort();
     };
-  }, [selectedAccountId]);
+  }, [selectedAccountId, entriesRetry]);
 
   const accounts = accountsState.status === "success" ? accountsState.data : [];
-  const activeEntries = entriesState.status === "success" ? entriesState.data : [];
-
   const activeAccount = accounts.find((account) => account.id === selectedAccountId);
 
   const handleSelectAccount = (id: string) => {
@@ -66,22 +70,29 @@ function App() {
   };
 
   const newEntries = entries.slice(ledgerEntries.length);
-  const derivedAccounts = accounts.map((acc) => {
-    const sum = newEntries
-      .filter((entry) => entry.accountId === acc.id)
-      .reduce((runningTotal, currEntry) => {
-        // Check the direction to decide if we add or subtract!
-        if (currEntry.direction === "CREDIT") {
-          return runningTotal + currEntry.amountMinorUnits;
-        } else {
-          return runningTotal - currEntry.amountMinorUnits;
+
+  const derivedAccountsState: RequestState<AccountDto[]> =
+    accountsState.status === "success"
+      ? {
+          status: "success",
+          data: accounts.map((acc) => {
+            const sum = newEntries
+              .filter((entry) => entry.accountId === acc.id)
+              .reduce((runningTotal, currEntry) => {
+                // Check the direction to decide if we add or subtract!
+                if (currEntry.direction === "CREDIT") {
+                  return runningTotal + currEntry.amountMinorUnits;
+                } else {
+                  return runningTotal - currEntry.amountMinorUnits;
+                }
+              }, 0);
+            return {
+              ...acc,
+              balanceMinorUnits: acc.balanceMinorUnits + sum,
+            };
+          }),
         }
-      }, 0);
-    return {
-      ...acc,
-      balanceMinorUnits: acc.balanceMinorUnits + sum,
-    };
-  });
+      : accountsState;
 
   return (
     <div className={styles.appContainer}>
@@ -91,13 +102,14 @@ function App() {
       <main className={styles.appGrid}>
         <Panel title="Accounts">
           <AccountsTable
-            accounts={derivedAccounts}
+            accountsState={derivedAccountsState}
             selectedAccountId={selectedAccountId}
             onSelect={handleSelectAccount}
+            onRetry={() => setAccountsRetry((t) => t + 1)}
           />
         </Panel>
         <Panel title={activeAccount ? `Entries — ${activeAccount.name}` : "Entries"}>
-          <EntriesPanel entries={activeEntries} />
+          <EntriesPanel entriesState={entriesState} onRetry={() => setEntriesRetry((t) => t + 1)} />
         </Panel>
         <Panel title="New Transfer">
           <TransferForm accounts={accounts} onAdd={handleAddEntries} />
