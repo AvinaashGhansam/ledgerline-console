@@ -1,16 +1,38 @@
 import type * as React from "react";
 import type { AccountDto } from "../../../shared/api/types.ts";
 import { formatMoney } from "../../../shared/money/formatMoney.ts";
+import type { RequestState } from "../../../shared/types.ts";
 import styles from "./AccountsTable.module.css";
 
 type AccountsTableProps = {
-  accounts: readonly AccountDto[];
   selectedAccountId: string;
   onSelect: (id: string) => void;
+  accountsState: RequestState<AccountDto[]>;
+  onRetry: () => void;
 };
 
-const AccountsTable = ({ accounts, selectedAccountId, onSelect }: AccountsTableProps) => {
-  const sortedAccounts = accounts.toSorted((a, b) => a.name.localeCompare(b.name));
+const AccountsTable = ({
+  selectedAccountId,
+  onSelect,
+  accountsState,
+  onRetry,
+}: AccountsTableProps) => {
+  if (accountsState.status === "loading") {
+    return <div>Loading accounts...</div>;
+  }
+
+  if (accountsState.status === "error") {
+    return (
+      <div>
+        <p>{accountsState.message}</p>
+        <button type="button" onClick={onRetry}>
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const sortedAccounts = accountsState.data.toSorted((a, b) => a.name.localeCompare(b.name));
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTableRowElement>, id: string) => {
     if (e.key === "Enter" || e.key === " ") {

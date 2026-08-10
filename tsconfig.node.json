@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     /* Environment — match Node 24; never downlevel (native exec doesn't) */
     "target": "ESNext",
     "module": "NodeNext",
@@ -11,7 +12,7 @@
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
     "rewriteRelativeImportExtensions": true,
-
+    "composite": true,
     /* Strictness */
     "strict": true,
     "noUncheckedIndexedAccess": true,
@@ -28,5 +29,5 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*", "test/**/*"]
+  "include": ["vite.config.ts", "test/**/*"]
 }

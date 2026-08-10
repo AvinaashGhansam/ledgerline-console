@@ -1,19 +1,8 @@
-export type AccountDto = {
-  id: string;
-  name: string;
-  currency: Currency;
-  balanceMinorUnits: number;
-};
+import type { z } from "zod";
+import type { AccountDtoSchema, CurrencySchema, EntryDtoSchema } from "./schemas.ts";
 
-export type EntryDto = {
-  id: string;
-  accountId: string;
-  postingId: string;
-  direction: "CREDIT" | "DEBIT";
-  amountMinorUnits: number;
-  currency: Currency;
-  occurredAt: string;
-  memo?: string;
-};
+export type AccountDto = z.infer<typeof AccountDtoSchema>;
 
-export type Currency = "USD" | "EUR";
+export type EntryDto = z.infer<typeof EntryDtoSchema>;
+
+export type Currency = z.infer<typeof CurrencySchema>;
