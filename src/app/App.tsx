@@ -66,7 +66,8 @@ function App() {
   };
 
   const handleAddEntries = (newEntries: EntryDto[]) => {
-    setPostedEntries((prevEntry) => [...prevEntry, ...newEntries]);
+      const validatedEntries = EntryListSchema.parse(newEntries);
+    setPostedEntries((prevEntry) => [...prevEntry, ...validatedEntries]);
   };
 
   const derivedAccountsState: RequestState<AccountDto[]> =
