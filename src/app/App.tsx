@@ -6,9 +6,9 @@ import TransferForm from "../features/postings/TransferForm/TransferForm.tsx";
 import { getJson, toMessage } from "../shared/api/client.ts";
 import { AccountListSchema, EntryListSchema } from "../shared/api/schemas.ts";
 import type { AccountDto, EntryDto } from "../shared/api/types.ts";
+import { CURRENT_LCX_RUNG } from "../shared/config.ts";
 import type { RequestState } from "../shared/types.ts";
 import styles from "./App.module.css";
-import {CURRENT_LCX_RUNG} from "../shared/config.ts";
 
 function App() {
   const [selectedAccountId, setSelectedAccountId] = useState("acc-cash");
