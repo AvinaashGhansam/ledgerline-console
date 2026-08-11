@@ -23,7 +23,10 @@ function App() {
   useEffect(() => {
     const controller = new AbortController();
 
-    getJson(`/api/accounts?retry=${accountsRetry}`, AccountListSchema, controller.signal)
+    getJson(`/api/accounts`, AccountListSchema, {
+      signal: controller.signal,
+      headers: { "X-Retry": String(accountsRetry) },
+    })
       .then((data) => {
         setAccountsState({ status: "success", data });
       })
@@ -31,7 +34,6 @@ function App() {
         if (controller.signal.aborted) return;
         setAccountsState({ status: "error", message: toMessage(err) });
       });
-
     return () => {
       controller.abort();
     };
@@ -41,11 +43,10 @@ function App() {
     setEntriesState({ status: "loading" });
     const controller = new AbortController();
 
-    getJson(
-      `/api/accounts/${selectedAccountId}/entries?retry=${entriesRetry}`,
-      EntryListSchema,
-      controller.signal,
-    )
+    getJson(`/api/accounts/${selectedAccountId}/entries`, EntryListSchema, {
+      signal: controller.signal,
+      headers: { "X-Retry": String(entriesRetry) },
+    })
       .then((data) => {
         setEntriesState({ status: "success", data });
       })
@@ -53,6 +54,7 @@ function App() {
         if (controller.signal.aborted) return;
         setEntriesState({ status: "error", message: toMessage(err) });
       });
+    console.log("Retrying...", entriesRetry);
     return () => {
       controller.abort();
     };
@@ -66,8 +68,7 @@ function App() {
   };
 
   const handleAddEntries = (newEntries: EntryDto[]) => {
-    const validatedEntries = EntryListSchema.parse(newEntries);
-    setPostedEntries((prevEntry) => [...prevEntry, ...validatedEntries]);
+    setPostedEntries((prevEntry) => [...prevEntry, ...newEntries]);
   };
 
   const derivedAccountsState: RequestState<AccountDto[]> =

@@ -14,11 +14,11 @@ export class ApiError extends Error {
 export async function getJson<T>(
   path: string,
   schema: z.ZodSchema<T>,
-  signal?: AbortSignal,
+  init?: RequestInit,
 ): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(path, { signal });
+    res = await fetch(path, init);
   } catch (error) {
     throw new ApiError("network", "Network Error", error);
   }
