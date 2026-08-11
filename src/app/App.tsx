@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import packageJson from "../../package.json";
 import Panel from "../components/Panel/Panel.tsx";
 import AccountsTable from "../features/accounts/AccountsTable/AccountsTable.tsx";
 import EntriesPanel from "../features/entries/EntriesPanel/EntriesPanel.tsx";
@@ -108,7 +109,7 @@ function App() {
   return (
     <div className={styles.appContainer}>
       <header className={styles.appHeader}>
-        <h1>Ledgerline Console [LCX-1]</h1>
+        <h1>Ledgerline Console [LCX-{packageJson.version.charAt(0)}]</h1>
       </header>
       <main className={styles.appGrid}>
         <Panel title="Accounts">
