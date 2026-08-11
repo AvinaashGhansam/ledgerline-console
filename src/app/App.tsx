@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import packageJson from "../../package.json";
 import Panel from "../components/Panel/Panel.tsx";
 import AccountsTable from "../features/accounts/AccountsTable/AccountsTable.tsx";
 import EntriesPanel from "../features/entries/EntriesPanel/EntriesPanel.tsx";
@@ -9,6 +8,7 @@ import { AccountListSchema, EntryListSchema } from "../shared/api/schemas.ts";
 import type { AccountDto, EntryDto } from "../shared/api/types.ts";
 import type { RequestState } from "../shared/types.ts";
 import styles from "./App.module.css";
+import {CURRENT_LCX_RUNG} from "../shared/config.ts";
 
 function App() {
   const [selectedAccountId, setSelectedAccountId] = useState("acc-cash");
@@ -55,7 +55,6 @@ function App() {
         if (controller.signal.aborted) return;
         setEntriesState({ status: "error", message: toMessage(err) });
       });
-    console.log("Retrying...", entriesRetry);
     return () => {
       controller.abort();
     };
@@ -109,7 +108,7 @@ function App() {
   return (
     <div className={styles.appContainer}>
       <header className={styles.appHeader}>
-        <h1>Ledgerline Console [LCX-{packageJson.version.charAt(0)}]</h1>
+        <h1>Ledgerline Console [LCX-{CURRENT_LCX_RUNG}]</h1>
       </header>
       <main className={styles.appGrid}>
         <Panel title="Accounts">
