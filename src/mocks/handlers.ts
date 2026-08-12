@@ -32,12 +32,12 @@ export const handlers = [
     if (!fromAccount) {
       return HttpResponse.json(
         {
-          type: "about: fromAccount",
+          type: "about:blank",
           title: "Account Not Found",
           status: 404,
           detail: "from account does not exist for this transaction",
         },
-        { status: 404 },
+        { status: 404, headers: { "Content-Type": "application/problem+json" } },
       );
     }
 
@@ -61,7 +61,7 @@ export const handlers = [
           status: 422,
           detail: `Cannot transfer between ${fromAccount.currency} and ${toAccount.currency} accounts`,
         },
-        { status: 422 },
+        { status: 422, headers: { "Content-Type": "application/problem+json" } },
       );
     }
 
