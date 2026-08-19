@@ -1,0 +1,83 @@
+.viewport {
+  --toast-bg-success: #f0fdf4;
+  --toast-text-success: #166534;
+  --toast-border-success: #22c55e;
+
+  --toast-bg-error: #fef2f2;
+  --toast-text-error: #991b1b;
+  --toast-border-error: #ef4444;
+
+  --toast-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.viewport {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  min-width: 300px;
+  max-width: 400px;
+  padding: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--toast-shadow);
+
+  /* Typography */
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+
+  /* Triggers the animation below automatically when the element is rendered */
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 4. The Variants (Strictly Colors/Borders - NO layout rules here!) */
+.success {
+  background-color: var(--toast-bg-success);
+  color: var(--toast-text-success);
+  border-left: 6px solid var(--toast-border-success);
+}
+
+.error {
+  background-color: var(--toast-bg-error);
+  color: var(--toast-text-error);
+  border-left: 6px solid var(--toast-border-error);
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 1.25rem;
+  padding: 4px 8px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.closeButton:hover {
+  opacity: 1;
+}
+
+/* 5. The Animations */
+/* Uses transform instead of margin/padding for buttery smooth 60fps rendering */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}

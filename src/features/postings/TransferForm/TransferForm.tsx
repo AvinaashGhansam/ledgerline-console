@@ -1,6 +1,7 @@
 import { type ChangeEvent, type SubmitEvent, useReducer } from "react";
 import type { AccountDto, EntryDto } from "../../../shared/api/types.ts";
 import { parseMoney } from "../../../shared/money/parseMoney.ts";
+import { useToast } from "../../../shared/toast/ToastProvider.tsx";
 import styles from "./TransferForm.module.css";
 
 type TransferFormProps = {
@@ -76,7 +77,7 @@ export const initialPostingState: PostingState = {
 
 const TransferForm = ({ accounts, onAdd }: TransferFormProps) => {
   const [form, formDispatch] = useReducer(postingReducer, initialPostingState);
-
+  const { show } = useToast();
   const { fromAccountId, toAccountId, amount, memo } = form.fields;
   const toAccountCurrency = accounts.find((acc) => acc.id === toAccountId)?.currency;
   const fromAccountCurrency = accounts.find((acc) => acc.id === fromAccountId)?.currency;
@@ -137,6 +138,7 @@ const TransferForm = ({ accounts, onAdd }: TransferFormProps) => {
 
     onAdd([debit, credit]);
     formDispatch({ type: "submitSucceeded" });
+    show("Transfer successful!", "success");
   };
 
   const getLocalFieldErrors = () => {
