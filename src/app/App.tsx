@@ -12,8 +12,6 @@ import styles from "./App.module.css";
 
 function App() {
   const [selectedAccountId, setSelectedAccountId] = useState("acc-cash");
-  // local writes are unknown to the mock server until LCX-3, this is purely a client-side illusion of persistence
-  const [postedEntries, setPostedEntries] = useState<EntryDto[]>([]);
   const [accountsState, setAccountsState] = useState<RequestState<AccountDto[]>>({
     status: "loading",
   });
@@ -67,44 +65,6 @@ function App() {
     setSelectedAccountId(id);
   };
 
-  const handleAddEntries = (newEntries: EntryDto[]) => {
-    setPostedEntries((prevEntry) => [...prevEntry, ...newEntries]);
-  };
-
-  const derivedAccountsState: RequestState<AccountDto[]> =
-    accountsState.status === "success"
-      ? {
-          status: "success",
-          data: accounts.map((acc) => {
-            const sum = postedEntries
-              .filter((entry) => entry.accountId === acc.id)
-              .reduce((runningTotal, currEntry) => {
-                // Check the direction to decide if we add or subtract!
-                if (currEntry.direction === "CREDIT") {
-                  return runningTotal + currEntry.amountMinorUnits;
-                } else {
-                  return runningTotal - currEntry.amountMinorUnits;
-                }
-              }, 0);
-            return {
-              ...acc,
-              balanceMinorUnits: acc.balanceMinorUnits + sum,
-            };
-          }),
-        }
-      : accountsState;
-
-  const derivedEntriesState: RequestState<EntryDto[]> =
-    entriesState.status === "success"
-      ? {
-          status: "success",
-          data: [
-            ...entriesState.data,
-            ...postedEntries.filter((entry) => entry.accountId === selectedAccountId),
-          ].toSorted((a, b) => b.occurredAt.localeCompare(a.occurredAt)),
-        }
-      : entriesState;
-
   return (
     <div className={styles.appContainer}>
       <header className={styles.appHeader}>
@@ -113,20 +73,23 @@ function App() {
       <main className={styles.appGrid}>
         <Panel title="Accounts">
           <AccountsTable
-            accountsState={derivedAccountsState}
+            accountsState={accountsState}
             selectedAccountId={selectedAccountId}
             onSelect={handleSelectAccount}
             onRetry={() => setAccountsRetry((t) => t + 1)}
           />
         </Panel>
         <Panel title={activeAccount ? `Entries — ${activeAccount.name}` : "Entries"}>
-          <EntriesPanel
-            entriesState={derivedEntriesState}
-            onRetry={() => setEntriesRetry((t) => t + 1)}
-          />
+          <EntriesPanel entriesState={entriesState} onRetry={() => setEntriesRetry((t) => t + 1)} />
         </Panel>
         <Panel title="New Transfer">
-          <TransferForm accounts={accounts} onAdd={handleAddEntries} />
+          <TransferForm
+            accounts={accounts}
+            onPostingSucceeded={() => {
+              setAccountsRetry((r) => r + 1);
+              setEntriesRetry((r) => r + 1);
+            }}
+          />
         </Panel>
       </main>
     </div>

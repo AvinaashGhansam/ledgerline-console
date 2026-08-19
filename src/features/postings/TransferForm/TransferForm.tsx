@@ -1,12 +1,14 @@
 import { type ChangeEvent, type SubmitEvent, useReducer } from "react";
-import type { AccountDto, EntryDto } from "../../../shared/api/types.ts";
+import { postJson, toMessage } from "../../../shared/api/client.ts";
+import { PostingResponseSchema } from "../../../shared/api/schemas.ts";
+import type { AccountDto, PostingRequest } from "../../../shared/api/types.ts";
 import { parseMoney } from "../../../shared/money/parseMoney.ts";
 import { useToast } from "../../../shared/toast/ToastProvider.tsx";
 import styles from "./TransferForm.module.css";
 
 type TransferFormProps = {
   accounts: readonly AccountDto[];
-  onAdd: (entries: EntryDto[]) => void;
+  onPostingSucceeded: () => void;
 };
 
 type MutationState =
@@ -75,7 +77,7 @@ export const initialPostingState: PostingState = {
   },
 };
 
-const TransferForm = ({ accounts, onAdd }: TransferFormProps) => {
+const TransferForm = ({ accounts, onPostingSucceeded }: TransferFormProps) => {
   const [form, formDispatch] = useReducer(postingReducer, initialPostingState);
   const { show } = useToast();
   const { fromAccountId, toAccountId, amount, memo } = form.fields;
@@ -97,7 +99,7 @@ const TransferForm = ({ accounts, onAdd }: TransferFormProps) => {
     });
   };
 
-  const handleSubmit = (e: SubmitEvent) => {
+  const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
     const hasLocalErrors = Object.keys(localErrors).length > 0;
     if (hasLocalErrors) {
@@ -110,35 +112,23 @@ const TransferForm = ({ accounts, onAdd }: TransferFormProps) => {
       return;
     }
 
-    const postingId = crypto.randomUUID();
-    const occurredAt = new Date().toISOString();
-    const amountMinorUnits = parsedMoney.value;
-
-    const debit: EntryDto = {
-      id: crypto.randomUUID(),
-      accountId: fromAccountId,
-      postingId,
-      direction: "DEBIT",
-      amountMinorUnits,
-      currency,
-      occurredAt,
-      memo: memo,
+    const body: PostingRequest = {
+      fromAccountId,
+      toAccountId,
+      amountMinorUnits: parsedMoney.value,
+      memo: memo || undefined,
     };
 
-    const credit: EntryDto = {
-      id: crypto.randomUUID(),
-      accountId: toAccountId,
-      postingId,
-      direction: "CREDIT",
-      amountMinorUnits,
-      currency,
-      occurredAt,
-      memo: memo,
-    };
+    formDispatch({ type: "submitStarted" });
 
-    onAdd([debit, credit]);
-    formDispatch({ type: "submitSucceeded" });
-    show("Transfer successful!", "success");
+    try {
+      await postJson("/api/postings", body, PostingResponseSchema);
+      formDispatch({ type: "submitSucceeded" });
+      show("Transfer successful", "success");
+      onPostingSucceeded();
+    } catch (err) {
+      formDispatch({ type: "submitFailed", payload: { error: toMessage(err), fieldErrors: {} } });
+    }
   };
 
   const getLocalFieldErrors = () => {
