@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+export const CURRENCY_MISMATCH_TYPE = "urn:ledgerline:problem:currency-mismatch";
 export const CurrencySchema = z.enum(["USD", "EUR"]);
 
 export const AccountDtoSchema = z.object({

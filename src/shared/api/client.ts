@@ -5,11 +5,17 @@ export class ApiError extends Error {
   public kind: "network" | "http" | "parse";
   public status?: number;
   public detail?: string;
+  public readonly problemType: string | undefined;
 
   constructor(
     kind: "network" | "http" | "parse",
     message: string,
-    options?: { cause?: unknown; detail?: string; status?: number },
+    options?: {
+      cause?: unknown;
+      detail?: string;
+      status?: number;
+      problemType?: string | undefined;
+    },
   ) {
     super(message);
     this.name = "ApiError";
@@ -17,6 +23,7 @@ export class ApiError extends Error {
     this.cause = options?.cause;
     this.status = options?.status;
     this.detail = options?.detail;
+    this.problemType = options?.problemType;
   }
 }
 
@@ -29,7 +36,7 @@ async function request<T>(path: string, schema: z.ZodSchema<T>, init?: RequestIn
   }
 
   if (!res.ok) {
-    let title: string | undefined, detail: string | undefined;
+    let title: string | undefined, detail: string | undefined, type: string | undefined;
 
     try {
       const body = await res.json();
@@ -37,6 +44,7 @@ async function request<T>(path: string, schema: z.ZodSchema<T>, init?: RequestIn
       if (safeParseBody.success) {
         title = safeParseBody.data.title;
         detail = safeParseBody.data.detail;
+        type = safeParseBody.data.type;
       }
     } catch (_err) {}
 
@@ -44,7 +52,11 @@ async function request<T>(path: string, schema: z.ZodSchema<T>, init?: RequestIn
       ? `${title}, Status: ${res.status}`
       : `HTTP error: Status: ${res.status}`;
 
-    throw new ApiError("http", errorMessage, { detail: detail, status: res.status });
+    throw new ApiError("http", errorMessage, {
+      detail: detail,
+      status: res.status,
+      problemType: type,
+    });
   }
 
   try {

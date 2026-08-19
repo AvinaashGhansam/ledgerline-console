@@ -1,4 +1,5 @@
 import { delay, HttpResponse, http } from "msw";
+import { CURRENCY_MISMATCH_TYPE } from "../shared/api/schemas.ts";
 import type { EntryDto, PostingRequest } from "../shared/api/types.ts";
 import { mockAccounts, mockEntries } from "./store.ts";
 
@@ -56,7 +57,7 @@ export const handlers = [
     if (fromAccount.currency !== toAccount.currency) {
       return HttpResponse.json(
         {
-          type: "urn:ledgerline:problem:currency-mismatch",
+          type: CURRENCY_MISMATCH_TYPE,
           title: "Currency Mismatch",
           status: 422,
           detail: `Cannot transfer between ${fromAccount.currency} and ${toAccount.currency} accounts`,
