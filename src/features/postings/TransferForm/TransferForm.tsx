@@ -1,6 +1,6 @@
 import { type ChangeEvent, type SubmitEvent, useReducer } from "react";
-import { postJson, toMessage } from "../../../shared/api/client.ts";
-import { PostingResponseSchema } from "../../../shared/api/schemas.ts";
+import { ApiError, postJson, toMessage } from "../../../shared/api/client.ts";
+import { CURRENCY_MISMATCH_TYPE, PostingResponseSchema } from "../../../shared/api/schemas.ts";
 import type { AccountDto, PostingRequest } from "../../../shared/api/types.ts";
 import { parseMoney } from "../../../shared/money/parseMoney.ts";
 import { useToast } from "../../../shared/toast/ToastProvider.tsx";
@@ -127,7 +127,16 @@ const TransferForm = ({ accounts, onPostingSucceeded }: TransferFormProps) => {
       show("Transfer successful", "success");
       onPostingSucceeded();
     } catch (err) {
-      formDispatch({ type: "submitFailed", payload: { error: toMessage(err), fieldErrors: {} } });
+      const message = toMessage(err);
+      if (err instanceof ApiError && err.problemType === CURRENCY_MISMATCH_TYPE) {
+        formDispatch({
+          type: "submitFailed",
+          payload: { error: message, fieldErrors: { toAccountId: message } },
+        });
+      } else {
+        formDispatch({ type: "submitFailed", payload: { error: message, fieldErrors: {} } });
+      }
+      show(message, "error");
     }
   };
 
@@ -170,6 +179,10 @@ const TransferForm = ({ accounts, onPostingSucceeded }: TransferFormProps) => {
     </>
   );
 
+  const serverToAccountError =
+    form.mutation.status === "error" ? form.mutation.fieldErrors?.toAccountId : undefined;
+
+  const displayToAccountError = localErrors.toAccountId || serverToAccountError;
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
       <div className={styles.formGroup}>
@@ -200,7 +213,7 @@ const TransferForm = ({ accounts, onPostingSucceeded }: TransferFormProps) => {
         >
           {accountOptions}
         </select>
-        {localErrors.toAccountId && <p className={styles.error}>{localErrors.toAccountId}</p>}
+        {displayToAccountError && <p className={styles.error}>{displayToAccountError}</p>}
       </div>
 
       <div className={styles.formGroup}>
@@ -230,6 +243,13 @@ const TransferForm = ({ accounts, onPostingSucceeded }: TransferFormProps) => {
           onChange={handleChange}
         />
       </div>
+      {form.mutation.status === "error" ? (
+        <p role="alert" className={styles.error}>
+          {form.mutation.error}
+        </p>
+      ) : (
+        ""
+      )}
       <button
         className={styles.button}
         type="submit"
