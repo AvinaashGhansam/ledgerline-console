@@ -35,7 +35,7 @@ const ToastViewport = () => {
           className={`${styles.toast} ${toast.variant === "success" ? styles.success : styles.error}`}
         >
           <span>{toast.variant === "success" ? "success" : "failed"}</span>
-          <p>{toast.message}</p>
+          <p className={styles.message}>{toast.message}</p>
           <button onClick={() => dismiss(toast.id)} type="button" className={styles.closeButton}>
             &times;
           </button>

@@ -69,6 +69,13 @@
   opacity: 1;
 }
 
+.message {
+  flex: 1;
+  min-width: 0;
+  margin: 0 12px;
+  overflow-wrap: break-word;
+}
+
 /* 5. The Animations */
 /* Uses transform instead of margin/padding for buttery smooth 60fps rendering */
 @keyframes slideIn {
