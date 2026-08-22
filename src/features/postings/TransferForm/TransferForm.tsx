@@ -1,4 +1,4 @@
-import { type ChangeEvent, type SubmitEvent, useReducer } from "react";
+import { type ChangeEvent, type SubmitEvent, useReducer, useState } from "react";
 import { ApiError, postJson, toMessage } from "../../../shared/api/client.ts";
 import { CURRENCY_MISMATCH_TYPE, PostingResponseSchema } from "../../../shared/api/schemas.ts";
 import type { AccountDto, PostingRequest } from "../../../shared/api/types.ts";
@@ -79,6 +79,7 @@ export const initialPostingState: PostingState = {
 
 const TransferForm = ({ accounts, onPostingSucceeded }: TransferFormProps) => {
   const [form, formDispatch] = useReducer(postingReducer, initialPostingState);
+  const [bypassCurrencyCheck, setBypassCurrencyCheck] = useState(false);
   const { show } = useToast();
   const { fromAccountId, toAccountId, amount, memo } = form.fields;
   const toAccountCurrency = accounts.find((acc) => acc.id === toAccountId)?.currency;
@@ -147,7 +148,12 @@ const TransferForm = ({ accounts, onPostingSucceeded }: TransferFormProps) => {
       errors.toAccountId = "Cannot transfer to the same account.";
     }
 
-    if (fromAccountId && toAccountId && fromAccountCurrency !== toAccountCurrency) {
+    if (
+      !bypassCurrencyCheck &&
+      fromAccountId &&
+      toAccountId &&
+      fromAccountCurrency !== toAccountCurrency
+    ) {
       errors.toAccountId = "Account must have the same currency.";
     }
 
@@ -250,10 +256,27 @@ const TransferForm = ({ accounts, onPostingSucceeded }: TransferFormProps) => {
       ) : (
         ""
       )}
+      {import.meta.env.DEV && (
+        <div className={styles.formGroup}>
+          <label>
+            <input
+              type="checkbox"
+              checked={bypassCurrencyCheck}
+              onChange={(e) => setBypassCurrencyCheck(e.target.checked)}
+            />
+            [DEV] Bypass local currency validation
+          </label>
+        </div>
+      )}
       <button
         className={styles.button}
         type="submit"
-        disabled={Object.keys(localErrors).length > 0 || isAmountMuted || amount === ""}
+        disabled={
+          Object.keys(localErrors).length > 0 ||
+          isAmountMuted ||
+          amount === "" ||
+          form.mutation.status === "pending"
+        }
       >
         Add Transfer
       </button>

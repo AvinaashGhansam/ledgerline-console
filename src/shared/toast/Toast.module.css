@@ -36,9 +36,6 @@
   font-family: inherit;
   font-size: 0.875rem;
   font-weight: 500;
-
-  /* Triggers the animation below automatically when the element is rendered */
-  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* 4. The Variants (Strictly Colors/Borders - NO layout rules here!) */
@@ -86,5 +83,12 @@
   to {
     transform: translateX(0);
     opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .toast {
+    /* Triggers the animation below automatically when the element is rendered */
+    animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 }
