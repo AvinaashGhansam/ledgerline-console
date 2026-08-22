@@ -46,6 +46,7 @@ async function request<T>(path: string, schema: z.ZodSchema<T>, init?: RequestIn
         detail = safeParseBody.data.detail;
         type = safeParseBody.data.type;
       }
+      // Ignore JSON parse errors here; we will fall back to the generic HTTP error below.
     } catch (_err) {}
 
     const errorMessage = title

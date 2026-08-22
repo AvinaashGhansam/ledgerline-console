@@ -100,6 +100,37 @@ const TransferForm = ({ accounts, onPostingSucceeded }: TransferFormProps) => {
     });
   };
 
+  const getLocalFieldErrors = () => {
+    const errors: Partial<Record<keyof PostingState["fields"], string>> = {};
+
+    if (fromAccountId && toAccountId && toAccountId === fromAccountId) {
+      errors.toAccountId = "Cannot transfer to the same account.";
+    }
+
+    if (
+      !bypassCurrencyCheck &&
+      fromAccountId &&
+      toAccountId &&
+      fromAccountCurrency !== toAccountCurrency
+    ) {
+      errors.toAccountId = "Account must have the same currency.";
+    }
+
+    if (amount !== "") {
+      if (!parsedMoney.ok) {
+        errors.amount = parsedMoney.reason;
+      }
+    }
+
+    if (parsedMoney.ok && parsedMoney.value <= 0) {
+      errors.amount = "Transfer amount must be greater than zero.";
+    }
+
+    return errors;
+  };
+
+  const localErrors = getLocalFieldErrors();
+
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
     const hasLocalErrors = Object.keys(localErrors).length > 0;
@@ -140,37 +171,6 @@ const TransferForm = ({ accounts, onPostingSucceeded }: TransferFormProps) => {
       show(message, "error");
     }
   };
-
-  const getLocalFieldErrors = () => {
-    const errors: Partial<Record<keyof PostingState["fields"], string>> = {};
-
-    if (fromAccountId && toAccountId && toAccountId === fromAccountId) {
-      errors.toAccountId = "Cannot transfer to the same account.";
-    }
-
-    if (
-      !bypassCurrencyCheck &&
-      fromAccountId &&
-      toAccountId &&
-      fromAccountCurrency !== toAccountCurrency
-    ) {
-      errors.toAccountId = "Account must have the same currency.";
-    }
-
-    if (amount !== "") {
-      if (!parsedMoney.ok) {
-        errors.amount = parsedMoney.reason;
-      }
-    }
-
-    if (parsedMoney.ok && parsedMoney.value <= 0) {
-      errors.amount = "Transfer amount must be greater than zero.";
-    }
-
-    return errors;
-  };
-
-  const localErrors = getLocalFieldErrors();
 
   const accountOptions = (
     <>
