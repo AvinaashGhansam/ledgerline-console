@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./app/App.tsx";
+import { ToastProvider } from "./shared/toast/ToastProvider.tsx";
 
 if (import.meta.env.VITE_API_MODE === "mock") {
   const { worker } = await import("./mocks/browser.ts");
@@ -15,6 +16,8 @@ if (!rootElement) {
 }
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <ToastProvider>
+      <App />
+    </ToastProvider>
   </StrictMode>,
 );

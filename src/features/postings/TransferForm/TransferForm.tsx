@@ -1,108 +1,176 @@
-import { type ChangeEvent, type SubmitEvent, useState } from "react";
-import type { AccountDto, EntryDto } from "../../../shared/api/types.ts";
+import { type ChangeEvent, type SubmitEvent, useReducer, useState } from "react";
+import { ApiError, postJson, toMessage } from "../../../shared/api/client.ts";
+import { CURRENCY_MISMATCH_TYPE, PostingResponseSchema } from "../../../shared/api/schemas.ts";
+import type { AccountDto, PostingRequest } from "../../../shared/api/types.ts";
 import { parseMoney } from "../../../shared/money/parseMoney.ts";
+import { useToast } from "../../../shared/toast/ToastProvider.tsx";
 import styles from "./TransferForm.module.css";
-
-type FormType = {
-  fromAccountId: string;
-  toAccountId: string;
-  amount: string;
-  memo: string;
-};
 
 type TransferFormProps = {
   accounts: readonly AccountDto[];
-  onAdd: (entries: EntryDto[]) => void;
+  onPostingSucceeded: () => void;
 };
 
-const INITIAL_FORM_STATE: FormType = { fromAccountId: "", toAccountId: "", amount: "", memo: "" };
+type MutationState =
+  | { status: "idle" }
+  | { status: "pending" }
+  | { status: "error"; error: string; fieldErrors?: Record<string, string> };
 
-const TransferForm = ({ accounts, onAdd }: TransferFormProps) => {
-  const [form, setForm] = useState<FormType>(INITIAL_FORM_STATE);
-  const isDirty = form.fromAccountId !== "" || form.toAccountId !== "" || form.amount !== "";
-  const parsedMoney = parseMoney(form.amount);
+type PostingState = {
+  fields: {
+    fromAccountId: string;
+    toAccountId: string;
+    amount: string;
+    memo?: string;
+  };
+  mutation: MutationState;
+};
+
+type PostingAction =
+  | {
+      type: "fieldChanged";
+      payload: { field: keyof PostingState["fields"]; value: string };
+    }
+  | { type: "submitStarted" }
+  | { type: "submitFailed"; payload: { error: string; fieldErrors?: Record<string, string> } }
+  | { type: "submitSucceeded" };
+
+const postingReducer = (state: PostingState, action: PostingAction): PostingState => {
+  switch (action.type) {
+    case "fieldChanged":
+      if (state.mutation.status === "pending") {
+        return state;
+      }
+      return {
+        ...state,
+        fields: { ...state.fields, [action.payload.field]: action.payload.value },
+        mutation: { status: "idle" },
+      };
+    case "submitStarted":
+      return { ...state, mutation: { status: "pending" } };
+    case "submitFailed": {
+      return {
+        ...state,
+        mutation: {
+          status: "error",
+          error: action.payload.error,
+          fieldErrors: action.payload.fieldErrors,
+        },
+      };
+    }
+    case "submitSucceeded":
+      return {
+        ...initialPostingState,
+      };
+  }
+};
+
+export const initialPostingState: PostingState = {
+  fields: {
+    fromAccountId: "",
+    toAccountId: "",
+    amount: "",
+    memo: "",
+  },
+  mutation: {
+    status: "idle",
+  },
+};
+
+const TransferForm = ({ accounts, onPostingSucceeded }: TransferFormProps) => {
+  const [form, formDispatch] = useReducer(postingReducer, initialPostingState);
+  const [bypassCurrencyCheck, setBypassCurrencyCheck] = useState(false);
+  const { show } = useToast();
+  const { fromAccountId, toAccountId, amount, memo } = form.fields;
+  const toAccountCurrency = accounts.find((acc) => acc.id === toAccountId)?.currency;
+  const fromAccountCurrency = accounts.find((acc) => acc.id === fromAccountId)?.currency;
+  const isDirty = fromAccountId !== "" || toAccountId !== "" || amount !== "";
+  const isToMuted = form.fields.fromAccountId === "";
+  const isAmountMuted = isToMuted || form.fields.toAccountId === "";
+
+  const parsedMoney = parseMoney(amount);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setForm((prevData) => ({ ...prevData, [name]: value }));
+    formDispatch({
+      type: "fieldChanged",
+      payload: {
+        field: e.target.name as keyof PostingState["fields"],
+        value: e.target.value,
+      },
+    });
   };
 
-  const handleSubmit = (e: SubmitEvent) => {
+  const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
-
-    if (errorMessage) {
+    const hasLocalErrors = Object.keys(localErrors).length > 0;
+    if (hasLocalErrors) {
       return;
     }
 
-    const postingId = crypto.randomUUID();
-    const occurredAt = new Date().toISOString();
+    const currency = accounts.find((acc) => acc.id === fromAccountId)?.currency;
 
-    if (!parsedMoney.ok) {
+    if (!parsedMoney.ok || !currency) {
       return;
     }
 
-    const amountMinorUnits = parsedMoney.value;
-
-    const currency = accounts.find((acc) => acc.id === form.fromAccountId)?.currency;
-
-    if (!currency) {
-      return;
-    }
-
-    const debit: EntryDto = {
-      id: crypto.randomUUID(),
-      accountId: form.fromAccountId,
-      postingId,
-      direction: "DEBIT",
-      amountMinorUnits,
-      currency,
-      occurredAt,
-      memo: form.memo,
+    const body: PostingRequest = {
+      fromAccountId,
+      toAccountId,
+      amountMinorUnits: parsedMoney.value,
+      memo: memo || undefined,
     };
 
-    const credit: EntryDto = {
-      id: crypto.randomUUID(),
-      accountId: form.toAccountId,
-      postingId,
-      direction: "CREDIT",
-      amountMinorUnits,
-      currency,
-      occurredAt,
-      memo: form.memo,
-    };
+    formDispatch({ type: "submitStarted" });
 
-    onAdd([debit, credit]);
-    setForm(INITIAL_FORM_STATE);
+    try {
+      await postJson("/api/postings", body, PostingResponseSchema);
+      formDispatch({ type: "submitSucceeded" });
+      show("Transfer successful", "success");
+      onPostingSucceeded();
+    } catch (err) {
+      const message = toMessage(err);
+      if (err instanceof ApiError && err.problemType === CURRENCY_MISMATCH_TYPE) {
+        formDispatch({
+          type: "submitFailed",
+          payload: { error: message, fieldErrors: { toAccountId: message } },
+        });
+      } else {
+        formDispatch({ type: "submitFailed", payload: { error: message, fieldErrors: {} } });
+      }
+      show(message, "error");
+    }
   };
 
-  const getErrorMessage = () => {
-    if (!(form.fromAccountId && form.toAccountId)) {
-      return "Please select both accounts.";
+  const getLocalFieldErrors = () => {
+    const errors: Partial<Record<keyof PostingState["fields"], string>> = {};
+
+    if (fromAccountId && toAccountId && toAccountId === fromAccountId) {
+      errors.toAccountId = "Cannot transfer to the same account.";
     }
 
-    if (form.fromAccountId === form.toAccountId) {
-      return "Cannot transfer to the same account.";
+    if (
+      !bypassCurrencyCheck &&
+      fromAccountId &&
+      toAccountId &&
+      fromAccountCurrency !== toAccountCurrency
+    ) {
+      errors.toAccountId = "Account must have the same currency.";
     }
 
-    const fromAccount = accounts.find((acc) => acc.id === form.fromAccountId);
-    const toAccount = accounts.find((acc) => acc.id === form.toAccountId);
-
-    if (fromAccount?.currency !== toAccount?.currency) {
-      return "Accounts must have the same currency.";
+    if (amount !== "") {
+      if (!parsedMoney.ok) {
+        errors.amount = parsedMoney.reason;
+      }
     }
 
-    if (!parsedMoney.ok) {
-      return parsedMoney.reason;
+    if (parsedMoney.ok && parsedMoney.value <= 0) {
+      errors.amount = "Transfer amount must be greater than zero.";
     }
 
-    if (parsedMoney.value <= 0) {
-      return "Transfer amount must be greater than zero.";
-    }
-
-    return "";
+    return errors;
   };
 
-  const errorMessage = getErrorMessage();
+  const localErrors = getLocalFieldErrors();
 
   const accountOptions = (
     <>
@@ -117,6 +185,10 @@ const TransferForm = ({ accounts, onAdd }: TransferFormProps) => {
     </>
   );
 
+  const serverToAccountError =
+    form.mutation.status === "error" ? form.mutation.fieldErrors?.toAccountId : undefined;
+
+  const displayToAccountError = localErrors.toAccountId || serverToAccountError;
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
       <div className={styles.formGroup}>
@@ -127,7 +199,7 @@ const TransferForm = ({ accounts, onAdd }: TransferFormProps) => {
           className={styles.input}
           name="fromAccountId"
           id="fromAccountId"
-          value={form.fromAccountId}
+          value={fromAccountId}
           onChange={handleChange}
         >
           {accountOptions}
@@ -141,11 +213,13 @@ const TransferForm = ({ accounts, onAdd }: TransferFormProps) => {
           className={styles.input}
           name="toAccountId"
           id="toAccountId"
-          value={form.toAccountId}
+          value={toAccountId}
+          disabled={isToMuted}
           onChange={handleChange}
         >
           {accountOptions}
         </select>
+        {displayToAccountError && <p className={styles.error}>{displayToAccountError}</p>}
       </div>
 
       <div className={styles.formGroup}>
@@ -156,9 +230,11 @@ const TransferForm = ({ accounts, onAdd }: TransferFormProps) => {
           className={styles.input}
           name="amount"
           id="amount"
-          value={form.amount}
+          value={amount}
+          disabled={isAmountMuted}
           onChange={handleChange}
         />
+        {isDirty && localErrors.amount && <p className={styles.error}>{localErrors.amount}</p>}
       </div>
       <div className={styles.formGroup}>
         <label className={styles.label} htmlFor="memo">
@@ -168,12 +244,40 @@ const TransferForm = ({ accounts, onAdd }: TransferFormProps) => {
           className={styles.input}
           name="memo"
           id="memo"
-          value={form.memo}
+          value={memo}
+          disabled={isAmountMuted}
           onChange={handleChange}
         />
       </div>
-      {isDirty && errorMessage && <p className={styles.error}>{errorMessage}</p>}
-      <button className={styles.button} type="submit" disabled={!!errorMessage}>
+      {form.mutation.status === "error" ? (
+        <p role="alert" className={styles.error}>
+          {form.mutation.error}
+        </p>
+      ) : (
+        ""
+      )}
+      {import.meta.env.DEV && (
+        <div className={styles.formGroup}>
+          <label>
+            <input
+              type="checkbox"
+              checked={bypassCurrencyCheck}
+              onChange={(e) => setBypassCurrencyCheck(e.target.checked)}
+            />
+            [DEV] Bypass local currency validation
+          </label>
+        </div>
+      )}
+      <button
+        className={styles.button}
+        type="submit"
+        disabled={
+          Object.keys(localErrors).length > 0 ||
+          isAmountMuted ||
+          amount === "" ||
+          form.mutation.status === "pending"
+        }
+      >
         Add Transfer
       </button>
     </form>
