@@ -1,37 +1,27 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import type { z } from "zod";
-import type { RequestState } from "../types.ts";
-import { getJson, toMessage } from "./client.ts";
+import { fetchQuery, getSnapshot, subscribe } from "../query/queryStore.ts";
 
-export const useQuery = <T>(_key: "entries" | "accounts", url: string, schema: z.ZodSchema<T>) => {
-  const [state, setState] = useState<RequestState<T>>({ status: "loading" });
-  const [nonce, setNonce] = useState(0);
+export const useQuery = <T>(key: "entries" | "accounts", url: string, schema: z.ZodSchema<T>) => {
   const schemaRef = useRef(schema);
   schemaRef.current = schema;
 
-  const refetch = () => {
-    setNonce((prevCount) => prevCount + 1);
-  };
+  const subscribeToStore = useCallback(
+    (listener: () => void) => {
+      return subscribe(key, listener);
+    },
+    [key],
+  );
+
+  const state = useSyncExternalStore(subscribeToStore, () => getSnapshot<T>(key));
 
   useEffect(() => {
-    const controller = new AbortController();
-    const fetchData = async () => {
-      setState({ status: "loading" });
+    void fetchQuery(key, url, schemaRef.current);
+  }, [key, url]);
 
-      try {
-        const data = await getJson(url, schemaRef.current, {
-          signal: controller.signal,
-          headers: { "X-Retry": String(nonce) },
-        });
-        setState({ status: "success", data });
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        setState({ status: "error", message: toMessage(err) });
-      }
-    };
-    void fetchData();
+  const refetch = () => {
+    void fetchQuery(key, url, schemaRef.current);
+  };
 
-    return () => controller.abort();
-  }, [url, nonce]);
   return { state, refetch };
 };
