@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import type { z } from "zod";
 import { fetchQuery, getSnapshot, subscribe } from "../query/queryStore.ts";
 
-export const useQuery = <T>(key: "entries" | "accounts", url: string, schema: z.ZodSchema<T>) => {
+export const useQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>) => {
   const schemaRef = useRef(schema);
   schemaRef.current = schema;
 

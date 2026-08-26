@@ -6,6 +6,7 @@ import TransferForm from "../features/postings/TransferForm/TransferForm.tsx";
 import { AccountListSchema, EntryListSchema } from "../shared/api/schemas.ts";
 import { useQuery } from "../shared/api/useQuery.ts";
 import { CURRENT_LCX_RUNG } from "../shared/config.ts";
+import { invalidate } from "../shared/query/queryStore.ts";
 import styles from "./App.module.css";
 
 function App() {
@@ -17,7 +18,7 @@ function App() {
     AccountListSchema,
   );
   const { state: entriesState, refetch: refetchEntries } = useQuery(
-    "entries",
+    `entries:${selectedAccountId}`,
     `/api/accounts/${selectedAccountId}/entries`,
     EntryListSchema,
   );
@@ -49,9 +50,10 @@ function App() {
         <Panel title="New Transfer">
           <TransferForm
             accounts={accounts}
-            onPostingSucceeded={() => {
-              refetchAccounts();
-              refetchEntries();
+            onPostingSucceeded={(fromId, toId) => {
+              invalidate("accounts");
+              invalidate(`entries:${fromId}`);
+              invalidate(`entries:${toId}`);
             }}
           />
         </Panel>

@@ -8,7 +8,7 @@ import styles from "./TransferForm.module.css";
 
 type TransferFormProps = {
   accounts: readonly AccountDto[];
-  onPostingSucceeded: () => void;
+  onPostingSucceeded: (fromAccountId: string, toAccountId: string) => void;
 };
 
 type MutationState =
@@ -157,7 +157,7 @@ const TransferForm = ({ accounts, onPostingSucceeded }: TransferFormProps) => {
       await postJson("/api/postings", body, PostingResponseSchema);
       formDispatch({ type: "submitSucceeded" });
       show("Transfer successful", "success");
-      onPostingSucceeded();
+      onPostingSucceeded(fromAccountId, toAccountId);
     } catch (err) {
       const message = toMessage(err);
       if (err instanceof ApiError && err.problemType === CURRENCY_MISMATCH_TYPE) {
