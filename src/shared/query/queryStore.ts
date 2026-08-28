@@ -93,6 +93,7 @@ export const fetchQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>) 
     }
   })();
   entry.inFlight = promise;
+  emit(key);
   return promise;
 };
 
@@ -103,4 +104,10 @@ export const invalidate = (key: string) => {
     entry.fetchAt = 0;
     void fetchQuery(key, entry.url, entry.schema);
   }
+};
+
+export const getIsRevalidating = (key: string): boolean => {
+  const entry = cache.get(key);
+
+  return !!(entry?.inFlight && entry.state.status === "success");
 };

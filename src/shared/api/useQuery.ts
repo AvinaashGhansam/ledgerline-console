@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import type { z } from "zod";
-import { fetchQuery, getSnapshot, subscribe } from "../query/queryStore.ts";
+import { fetchQuery, getIsRevalidating, getSnapshot, subscribe } from "../query/queryStore.ts";
 
 export const useQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>) => {
   const schemaRef = useRef(schema);
@@ -14,6 +14,7 @@ export const useQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>) =>
   );
 
   const state = useSyncExternalStore(subscribeToStore, () => getSnapshot<T>(key));
+  const isRevalidating = useSyncExternalStore(subscribeToStore, () => getIsRevalidating(key));
 
   useEffect(() => {
     void fetchQuery(key, url, schemaRef.current);
@@ -23,5 +24,5 @@ export const useQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>) =>
     void fetchQuery(key, url, schemaRef.current);
   };
 
-  return { state, refetch };
+  return { state, refetch, isRevalidating };
 };

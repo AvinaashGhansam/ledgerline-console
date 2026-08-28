@@ -7,9 +7,10 @@ import styles from "./EntriesPanel.module.css";
 type EntriesPanelProps = {
   entriesState: RequestState<EntryDto[]>;
   onRetry: () => void;
+  isRevalidatingEntries: boolean;
 };
 
-const EntriesPanel = ({ entriesState, onRetry }: EntriesPanelProps) => {
+const EntriesPanel = ({ entriesState, onRetry, isRevalidatingEntries }: EntriesPanelProps) => {
   if (entriesState.status === "loading") {
     return <div>Loading entries...</div>;
   }
@@ -30,7 +31,10 @@ const EntriesPanel = ({ entriesState, onRetry }: EntriesPanelProps) => {
   }
 
   return (
-    <ul className={styles.list}>
+    <ul
+      className={styles.list}
+      style={{ opacity: isRevalidatingEntries ? 0.5 : 1, transition: "opacity 0.2s" }}
+    >
       {entriesState.data.map((activeEntry) => (
         <li key={activeEntry.id} className={styles.entryRow}>
           <div className={styles.entryHeader}>

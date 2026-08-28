@@ -12,12 +12,16 @@ import styles from "./App.module.css";
 function App() {
   const [selectedAccountId, setSelectedAccountId] = useState("acc-cash");
 
-  const { state: accountsState, refetch: refetchAccounts } = useQuery(
-    "accounts",
-    "/api/accounts",
-    AccountListSchema,
-  );
-  const { state: entriesState, refetch: refetchEntries } = useQuery(
+  const {
+    state: accountsState,
+    refetch: refetchAccounts,
+    isRevalidating: isAccountRevalidating,
+  } = useQuery("accounts", "/api/accounts", AccountListSchema);
+  const {
+    state: entriesState,
+    refetch: refetchEntries,
+    isRevalidating: isEntriesRevalidating,
+  } = useQuery(
     `entries:${selectedAccountId}`,
     `/api/accounts/${selectedAccountId}/entries`,
     EntryListSchema,
@@ -42,10 +46,15 @@ function App() {
             selectedAccountId={selectedAccountId}
             onSelect={handleSelectAccount}
             onRetry={() => refetchAccounts()}
+            isRevalidatingAccounts={isAccountRevalidating}
           />
         </Panel>
         <Panel title={activeAccount ? `Entries — ${activeAccount.name}` : "Entries"}>
-          <EntriesPanel entriesState={entriesState} onRetry={() => refetchEntries()} />
+          <EntriesPanel
+            entriesState={entriesState}
+            onRetry={() => refetchEntries()}
+            isRevalidatingEntries={isEntriesRevalidating}
+          />
         </Panel>
         <Panel title="New Transfer">
           <TransferForm
