@@ -8,7 +8,7 @@ import styles from "./TransferForm.module.css";
 
 type TransferFormProps = {
   accounts: readonly AccountDto[];
-  onPostingSucceeded: () => void;
+  onPostingSucceeded: (fromAccountId: string, toAccountId: string) => void;
 };
 
 type MutationState =
@@ -100,47 +100,6 @@ const TransferForm = ({ accounts, onPostingSucceeded }: TransferFormProps) => {
     });
   };
 
-  const handleSubmit = async (e: SubmitEvent) => {
-    e.preventDefault();
-    const hasLocalErrors = Object.keys(localErrors).length > 0;
-    if (hasLocalErrors) {
-      return;
-    }
-
-    const currency = accounts.find((acc) => acc.id === fromAccountId)?.currency;
-
-    if (!parsedMoney.ok || !currency) {
-      return;
-    }
-
-    const body: PostingRequest = {
-      fromAccountId,
-      toAccountId,
-      amountMinorUnits: parsedMoney.value,
-      memo: memo || undefined,
-    };
-
-    formDispatch({ type: "submitStarted" });
-
-    try {
-      await postJson("/api/postings", body, PostingResponseSchema);
-      formDispatch({ type: "submitSucceeded" });
-      show("Transfer successful", "success");
-      onPostingSucceeded();
-    } catch (err) {
-      const message = toMessage(err);
-      if (err instanceof ApiError && err.problemType === CURRENCY_MISMATCH_TYPE) {
-        formDispatch({
-          type: "submitFailed",
-          payload: { error: message, fieldErrors: { toAccountId: message } },
-        });
-      } else {
-        formDispatch({ type: "submitFailed", payload: { error: message, fieldErrors: {} } });
-      }
-      show(message, "error");
-    }
-  };
-
   const getLocalFieldErrors = () => {
     const errors: Partial<Record<keyof PostingState["fields"], string>> = {};
 
@@ -171,6 +130,47 @@ const TransferForm = ({ accounts, onPostingSucceeded }: TransferFormProps) => {
   };
 
   const localErrors = getLocalFieldErrors();
+
+  const handleSubmit = async (e: SubmitEvent) => {
+    e.preventDefault();
+    const hasLocalErrors = Object.keys(localErrors).length > 0;
+    if (hasLocalErrors) {
+      return;
+    }
+
+    const currency = accounts.find((acc) => acc.id === fromAccountId)?.currency;
+
+    if (!parsedMoney.ok || !currency) {
+      return;
+    }
+
+    const body: PostingRequest = {
+      fromAccountId,
+      toAccountId,
+      amountMinorUnits: parsedMoney.value,
+      memo: memo || undefined,
+    };
+
+    formDispatch({ type: "submitStarted" });
+
+    try {
+      await postJson("/api/postings", body, PostingResponseSchema);
+      formDispatch({ type: "submitSucceeded" });
+      show("Transfer successful", "success");
+      onPostingSucceeded(fromAccountId, toAccountId);
+    } catch (err) {
+      const message = toMessage(err);
+      if (err instanceof ApiError && err.problemType === CURRENCY_MISMATCH_TYPE) {
+        formDispatch({
+          type: "submitFailed",
+          payload: { error: message, fieldErrors: { toAccountId: message } },
+        });
+      } else {
+        formDispatch({ type: "submitFailed", payload: { error: message, fieldErrors: {} } });
+      }
+      show(message, "error");
+    }
+  };
 
   const accountOptions = (
     <>
