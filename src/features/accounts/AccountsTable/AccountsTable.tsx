@@ -9,6 +9,7 @@ type AccountsTableProps = {
   onSelect: (id: string) => void;
   accountsState: RequestState<AccountDto[]>;
   onRetry: () => void;
+  isRevalidatingAccounts: boolean;
 };
 
 const AccountsTable = ({
@@ -16,6 +17,7 @@ const AccountsTable = ({
   onSelect,
   accountsState,
   onRetry,
+  isRevalidatingAccounts,
 }: AccountsTableProps) => {
   if (accountsState.status === "loading") {
     return <div>Loading accounts...</div>;
@@ -44,7 +46,10 @@ const AccountsTable = ({
   };
 
   return (
-    <table className={styles.table}>
+    <table
+      className={`${styles.table}`}
+      style={{ opacity: isRevalidatingAccounts ? 0.5 : 1, transition: "opacity 0.2s" }}
+    >
       <thead>
         <tr>
           <th scope="col">Name</th>

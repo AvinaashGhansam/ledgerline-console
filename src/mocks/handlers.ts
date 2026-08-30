@@ -25,6 +25,7 @@ export const handlers = [
     return HttpResponse.json(findEntries);
   }),
   http.post("/api/postings", async ({ request }) => {
+    await delay(700);
     const body = (await request.json()) as PostingRequest;
 
     const fromAccount = mockAccounts.find((acc) => acc.id === body.fromAccountId);
