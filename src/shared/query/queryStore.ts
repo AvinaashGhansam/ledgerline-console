@@ -11,6 +11,7 @@ type CacheEntry<T> = {
   inFlight: Promise<void> | null;
   url: string;
   schema: z.ZodSchema<T>;
+  emptyAt: number | null;
 };
 
 const cache = new Map<string, CacheEntry<unknown>>();
@@ -30,8 +31,20 @@ export const subscribe = (key: string, listener: () => void) => {
   }
   listeners.get(key)?.add(listener);
 
+  const entry = cache.get(key);
+  if (entry) {
+    entry.emptyAt = null;
+  }
+
   return () => {
     listeners.get(key)?.delete(listener);
+    const keyListeners = listeners.get(key);
+    if (keyListeners && keyListeners.size === 0) {
+      const entry = cache.get(key);
+      if (entry) {
+        entry.emptyAt = Date.now();
+      }
+    }
   };
 };
 
@@ -56,6 +69,7 @@ export const fetchQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>) 
       inFlight: null,
       url,
       schema,
+      emptyAt: null,
     };
     cache.set(key, entry);
     emit(key);
@@ -111,3 +125,26 @@ export const getIsRevalidating = (key: string): boolean => {
 
   return !!(entry?.inFlight && entry.state.status === "success");
 };
+
+const GC_TIME = 300_000;
+
+setInterval(() => {
+  for (const [key, entry] of cache.entries()) {
+    if (entry?.emptyAt && !entry.inFlight) {
+      if (Date.now() - entry.emptyAt > GC_TIME) {
+        cache.delete(key);
+        listeners.delete(key);
+      }
+    }
+  }
+}, 1000);
+
+declare global {
+  interface Window {
+    __queryCache?: typeof cache;
+  }
+}
+
+if (import.meta.env.DEV) {
+  window.__queryCache = cache;
+}
