@@ -12,6 +12,7 @@ type CacheEntry<T> = {
   url: string;
   schema: z.ZodSchema<T>;
   emptyAt: number | null;
+  abortController: AbortController | null;
 };
 
 const cache = new Map<string, CacheEntry<unknown>>();
@@ -43,6 +44,9 @@ export const subscribe = (key: string, listener: () => void) => {
       const entry = cache.get(key);
       if (entry) {
         entry.emptyAt = Date.now();
+        entry.abortController?.abort();
+        entry.inFlight = null;
+        entry.abortController = null;
       }
     }
   };
@@ -70,6 +74,7 @@ export const fetchQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>) 
       url,
       schema,
       emptyAt: null,
+      abortController: null,
     };
     cache.set(key, entry);
     emit(key);
@@ -85,10 +90,14 @@ export const fetchQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>) 
   // Deduplication lock
   if (entry.inFlight) return entry.inFlight;
 
+  const controller = new AbortController();
+  entry.abortController = controller;
+  const signal = controller.signal;
+
   // Network call
   const promise = (async () => {
     try {
-      const data = await getJson(url, schema);
+      const data = await getJson(url, schema, { signal });
 
       if (entry) {
         entry.state = { status: "success", data };
@@ -96,12 +105,16 @@ export const fetchQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>) 
         emit(key);
       }
     } catch (err) {
+      if (signal.aborted) {
+        return;
+      }
+
       if (entry) {
         entry.state = { status: "error", message: toMessage(err) };
       }
       emit(key);
     } finally {
-      if (entry) {
+      if (entry && entry.abortController === controller) {
         entry.inFlight = null;
       }
     }
