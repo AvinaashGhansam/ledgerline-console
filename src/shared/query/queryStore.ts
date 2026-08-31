@@ -111,7 +111,7 @@ export const fetchQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>):
       activeEntry.state = { status: "error", message: toMessage(err) };
       emit(key);
     } finally {
-      if (activeEntry && activeEntry.abortController === controller) {
+      if (activeEntry.abortController === controller) {
         activeEntry.inFlight = null;
       }
     }
