@@ -77,6 +77,7 @@ export const fetchQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>) 
       abortController: null,
     };
     cache.set(key, entry);
+    startGc();
     emit(key);
   } else {
     const isFresh = now - entry.fetchAt < STALE_TIME;
@@ -140,17 +141,32 @@ export const getIsRevalidating = (key: string): boolean => {
 };
 
 const GC_TIME = 300_000;
+let gcIntervalId: ReturnType<typeof setInterval> | null = null;
+const GC_TICK_RATE = Math.floor(GC_TIME / 10);
 
-setInterval(() => {
-  for (const [key, entry] of cache.entries()) {
-    if (entry?.emptyAt && !entry.inFlight) {
-      if (Date.now() - entry.emptyAt > GC_TIME) {
-        cache.delete(key);
-        listeners.delete(key);
-      }
-    }
+export const stopGc = () => {
+  if (gcIntervalId) {
+    clearInterval(gcIntervalId);
+    gcIntervalId = null;
   }
-}, 1000);
+};
+
+const startGc = () => {
+  if (!gcIntervalId) {
+    gcIntervalId = setInterval(() => {
+      for (const [key, entry] of cache.entries()) {
+        if (entry.emptyAt && !entry.inFlight) {
+          if (Date.now() - entry.emptyAt > GC_TIME) {
+            cache.delete(key);
+            listeners.delete(key);
+          }
+        }
+      }
+      if (cache.size === 0) stopGc();
+    }, GC_TICK_RATE);
+    (gcIntervalId as unknown as { unref?: () => void }).unref?.();
+  }
+};
 
 declare global {
   interface Window {
