@@ -62,7 +62,7 @@ export const getSnapshot = <T>(key: string): RequestState<T> => {
   return entry.state as RequestState<T>;
 };
 
-export const fetchQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>) => {
+export const fetchQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>): Promise<void> => {
   const now = Date.now();
   let entry = cache.get(key);
 
@@ -82,7 +82,7 @@ export const fetchQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>) 
   } else {
     const isFresh = now - entry.fetchAt < STALE_TIME;
 
-    if (isFresh && !entry.inFlight) return;
+    if (isFresh && !entry.inFlight) return Promise.resolve();
 
     entry.url = url;
     entry.schema = schema;
@@ -91,7 +91,9 @@ export const fetchQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>) 
   // Deduplication lock
   if (entry.inFlight) return entry.inFlight;
 
+  const activeEntry = entry;
   const controller = new AbortController();
+
   entry.abortController = controller;
   const signal = controller.signal;
 
@@ -99,28 +101,22 @@ export const fetchQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>) 
   const promise = (async () => {
     try {
       const data = await getJson(url, schema, { signal });
-
-      if (entry) {
-        entry.state = { status: "success", data };
-        entry.fetchAt = Date.now();
-        emit(key);
-      }
+      activeEntry.state = { status: "success", data };
+      activeEntry.fetchAt = Date.now();
+      emit(key);
     } catch (err) {
       if (signal.aborted) {
         return;
       }
-
-      if (entry) {
-        entry.state = { status: "error", message: toMessage(err) };
-      }
+      activeEntry.state = { status: "error", message: toMessage(err) };
       emit(key);
     } finally {
-      if (entry && entry.abortController === controller) {
-        entry.inFlight = null;
+      if (activeEntry && activeEntry.abortController === controller) {
+        activeEntry.inFlight = null;
       }
     }
   })();
-  entry.inFlight = promise;
+  activeEntry.inFlight = promise;
   emit(key);
   return promise;
 };
