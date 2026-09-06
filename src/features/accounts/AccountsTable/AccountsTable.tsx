@@ -1,24 +1,18 @@
-import type * as React from "react";
+import { NavLink, useParams } from "react-router";
 import type { AccountDto } from "../../../shared/api/types.ts";
 import { formatMoney } from "../../../shared/money/formatMoney.ts";
 import type { RequestState } from "../../../shared/types.ts";
 import styles from "./AccountsTable.module.css";
 
 type AccountsTableProps = {
-  selectedAccountId: string;
-  onSelect: (id: string) => void;
   accountsState: RequestState<AccountDto[]>;
   onRetry: () => void;
   isRevalidatingAccounts: boolean;
 };
 
-const AccountsTable = ({
-  selectedAccountId,
-  onSelect,
-  accountsState,
-  onRetry,
-  isRevalidatingAccounts,
-}: AccountsTableProps) => {
+const AccountsTable = ({ accountsState, onRetry, isRevalidatingAccounts }: AccountsTableProps) => {
+  const { accountId } = useParams();
+
   if (accountsState.status === "loading") {
     return <div>Loading accounts...</div>;
   }
@@ -36,19 +30,13 @@ const AccountsTable = ({
 
   const sortedAccounts = accountsState.data.toSorted((a, b) => a.name.localeCompare(b.name));
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTableRowElement>, id: string) => {
-    if (e.key === "Enter" || e.key === " ") {
-      if (e.key === " ") {
-        e.preventDefault();
-      }
-      onSelect(id);
-    }
-  };
-
   return (
     <table
       className={`${styles.table}`}
-      style={{ opacity: isRevalidatingAccounts ? 0.5 : 1, transition: "opacity 0.2s" }}
+      style={{
+        opacity: isRevalidatingAccounts ? 0.5 : 1,
+        transition: "opacity 0.2s",
+      }}
     >
       <thead>
         <tr>
@@ -60,24 +48,24 @@ const AccountsTable = ({
         </tr>
       </thead>
       <tbody>
-        {sortedAccounts.map((acc) => (
-          <tr
-            key={acc.id}
-            onClick={() => onSelect(acc.id)}
-            className={acc.id === selectedAccountId ? styles.selectedRow : ""}
-            tabIndex={0}
-            aria-selected={acc.id === selectedAccountId}
-            onKeyDown={(e) => handleKeyDown(e, acc.id)}
-          >
-            <td>{acc.name}</td>
-            <td>{acc.currency}</td>
-            <td className={acc.balanceMinorUnits < 0 ? styles.negative : styles.balance}>
-              {formatMoney(acc.balanceMinorUnits, acc.currency)}
-            </td>
-          </tr>
-        ))}
+        {sortedAccounts.map((acc) => {
+          const isSelected = acc.id === accountId;
+
+          return (
+            <tr key={acc.id} className={isSelected ? styles.selectedRow : styles.row}>
+              <td>
+                <NavLink to={`/accounts/${acc.id}`}>{acc.name}</NavLink>
+              </td>
+              <td>{acc.currency}</td>
+              <td className={acc.balanceMinorUnits < 0 ? styles.negative : styles.balance}>
+                {formatMoney(acc.balanceMinorUnits, acc.currency)}
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );
 };
+
 export default AccountsTable;

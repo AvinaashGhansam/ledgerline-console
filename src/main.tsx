@@ -1,7 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import App from "./app/App.tsx";
+import { RouterProvider } from "react-router";
+import { router } from "./app/routes.tsx";
 import { ToastProvider } from "./shared/toast/ToastProvider.tsx";
 
 if (import.meta.env.VITE_API_MODE === "mock") {
@@ -17,7 +18,7 @@ if (!rootElement) {
 createRoot(rootElement).render(
   <StrictMode>
     <ToastProvider>
-      <App />
+      <RouterProvider router={router} />
     </ToastProvider>
   </StrictMode>,
 );
