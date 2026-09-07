@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from "react-router";
+import AccountDetail from "../features/accounts/AccountDetail.tsx";
 import AccountsLayout from "../features/accounts/AccountsLayout.tsx";
 import RootLayout from "./RootLayout.tsx";
 
@@ -17,11 +18,7 @@ export const router = createBrowserRouter([
           },
           {
             path: ":accountId",
-            element: (
-              <div style={{ padding: "20px", border: "2px dashed green" }}>
-                Account Details Placeholder
-              </div>
-            ),
+            element: <AccountDetail />,
           },
           {
             path: ":accountId/post",
