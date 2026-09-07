@@ -20,14 +20,6 @@ export const router = createBrowserRouter([
             path: ":accountId",
             element: <AccountDetail />,
           },
-          {
-            path: ":accountId/post",
-            element: (
-              <div style={{ padding: "20px", border: "2px dashed red" }}>
-                Post Transfer Placeholder
-              </div>
-            ),
-          },
         ],
       },
       {
