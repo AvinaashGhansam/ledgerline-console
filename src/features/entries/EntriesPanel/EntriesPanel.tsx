@@ -32,77 +32,84 @@ const EntriesPanel = ({ entriesState, onRetry, isRevalidatingEntries }: EntriesP
     );
   }
 
+  if (entriesState.data.length === 0) {
+    return <div className={styles.emptyState}>No Transactions found for this account</div>;
+  }
+
   const filteredEntries =
     currentFilter === "ALL"
       ? entriesState.data
-      : entriesState.data?.filter((entry) => entry.direction === currentFilter);
+      : entriesState.data.filter((entry) => entry.direction === currentFilter);
+
+  const handleFilterChange = (direction: "ALL" | "CREDIT" | "DEBIT" = "ALL") => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (direction === "ALL") {
+        next.delete("direction");
+      } else {
+        next.set("direction", direction);
+      }
+      return next;
+    });
+  };
 
   return (
     <>
       <div className={styles.filterButtons}>
         <button
-          className={styles.button}
-          style={{ fontWeight: currentFilter === "ALL" ? "bold" : "normal" }}
+          className={
+            currentFilter === "ALL" ? `${styles.button} ${styles.boldText}` : styles.button
+          }
+          aria-pressed={currentFilter === "ALL"}
           type="button"
-          onClick={() => {
-            setSearchParams((prev) => {
-              const next = new URLSearchParams(prev);
-              next.delete("direction");
-              return next;
-            });
-          }}
+          onClick={() => handleFilterChange()}
         >
           All
         </button>
         <button
-          className={styles.button}
-          style={{ fontWeight: currentFilter === "DEBIT" ? "bold" : "normal" }}
-          type="button"
-          onClick={() =>
-            setSearchParams((prev) => {
-              const next = new URLSearchParams(prev);
-              next.set("direction", "DEBIT");
-              return next;
-            })
+          className={
+            currentFilter === "DEBIT" ? `${styles.button} ${styles.boldText}` : styles.button
           }
+          aria-pressed={currentFilter === "DEBIT"}
+          type="button"
+          onClick={() => handleFilterChange("DEBIT")}
         >
           Debit
         </button>
         <button
-          className={styles.button}
-          style={{ fontWeight: currentFilter === "CREDIT" ? "bold" : "normal" }}
-          type="button"
-          onClick={() =>
-            setSearchParams((prev) => {
-              const next = new URLSearchParams(prev);
-              next.set("direction", "CREDIT");
-              return next;
-            })
+          className={
+            currentFilter === "CREDIT" ? `${styles.button} ${styles.boldText}` : styles.button
           }
+          aria-pressed={currentFilter === "CREDIT"}
+          type="button"
+          onClick={() => handleFilterChange("CREDIT")}
         >
           Credit
         </button>
       </div>
-      {filteredEntries.length === 0 && (
-        <div className={styles.emptyState}>No Transactions found for this account</div>
-      )}
-      <ul
-        className={styles.list}
-        style={{ opacity: isRevalidatingEntries ? 0.5 : 1, transition: "opacity 0.2s" }}
-      >
-        {filteredEntries.map((activeEntry) => (
-          <li key={activeEntry.id} className={styles.entryRow}>
-            <div className={styles.entryHeader}>
-              <span className={styles.date}>{formatDate(activeEntry.occurredAt)}</span>
-              <DirectionBadge direction={activeEntry.direction} />
-              <div className={styles.amount}>
-                {formatMoney(activeEntry.amountMinorUnits, activeEntry.currency)}
+      {filteredEntries.length === 0 ? (
+        <div
+          className={styles.emptyState}
+        >{`No ${currentFilter.toLowerCase()} transactions found`}</div>
+      ) : (
+        <ul
+          className={styles.list}
+          style={{ opacity: isRevalidatingEntries ? 0.5 : 1, transition: "opacity 0.2s" }}
+        >
+          {filteredEntries.map((activeEntry) => (
+            <li key={activeEntry.id} className={styles.entryRow}>
+              <div className={styles.entryHeader}>
+                <span className={styles.date}>{formatDate(activeEntry.occurredAt)}</span>
+                <DirectionBadge direction={activeEntry.direction} />
+                <div className={styles.amount}>
+                  {formatMoney(activeEntry.amountMinorUnits, activeEntry.currency)}
+                </div>
               </div>
-            </div>
-            {activeEntry.memo && <p className={styles.memo}>{activeEntry.memo}</p>}
-          </li>
-        ))}
-      </ul>
+              {activeEntry.memo && <p className={styles.memo}>{activeEntry.memo}</p>}
+            </li>
+          ))}
+        </ul>
+      )}
     </>
   );
 };

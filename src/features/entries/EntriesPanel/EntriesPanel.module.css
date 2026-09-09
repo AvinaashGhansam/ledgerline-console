@@ -64,8 +64,12 @@
 }
 
 .button {
-  background-color: #f3f4f6;
-  color: #0066ff;
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+}
+
+.button:hover {
+  background-color: var(--color-surface-hover);
 }
 
 .boldText {
