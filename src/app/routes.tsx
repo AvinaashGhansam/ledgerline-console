@@ -1,7 +1,10 @@
+import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router";
 import AccountDetail from "../features/accounts/AccountDetail.tsx";
 import AccountsLayout from "../features/accounts/AccountsLayout.tsx";
 import RootLayout from "./RootLayout.tsx";
+
+const LazySettings = lazy(() => import("../features/settings/Settings.tsx"));
 
 export const router = createBrowserRouter([
   {
@@ -24,7 +27,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "/settings",
-        element: <div style={{ padding: "20px" }}>Settings Placeholder</div>,
+        element: (
+          <Suspense fallback={<div>Loading Settings...</div>}>
+            <LazySettings />
+          </Suspense>
+        ),
       },
       {
         path: "*",
