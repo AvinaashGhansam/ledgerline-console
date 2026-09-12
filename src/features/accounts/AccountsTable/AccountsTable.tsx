@@ -1,4 +1,4 @@
-import { NavLink, useParams } from "react-router";
+import { NavLink, useParams, useSearchParams } from "react-router";
 import type { AccountDto } from "../../../shared/api/types.ts";
 import { formatMoney } from "../../../shared/money/formatMoney.ts";
 import type { RequestState } from "../../../shared/types.ts";
@@ -11,7 +11,10 @@ type AccountsTableProps = {
 };
 
 const AccountsTable = ({ accountsState, onRetry, isRevalidatingAccounts }: AccountsTableProps) => {
+  const [searchParams, _] = useSearchParams();
   const { accountId } = useParams();
+
+  const direction = searchParams.get("direction");
 
   if (accountsState.status === "loading") {
     return <div>Loading accounts...</div>;
@@ -54,7 +57,14 @@ const AccountsTable = ({ accountsState, onRetry, isRevalidatingAccounts }: Accou
           return (
             <tr key={acc.id} className={isSelected ? styles.selectedRow : styles.row}>
               <td>
-                <NavLink to={`/accounts/${acc.id}`}>{acc.name}</NavLink>
+                <NavLink
+                  to={{
+                    pathname: `/accounts/${acc.id}`,
+                    search: direction ? `?direction=${direction}` : "",
+                  }}
+                >
+                  {acc.name}
+                </NavLink>
               </td>
               <td>{acc.currency}</td>
               <td className={acc.balanceMinorUnits < 0 ? styles.negative : styles.balance}>
