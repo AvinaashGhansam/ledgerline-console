@@ -1,6 +1,8 @@
 import { NavLink, useParams, useSearchParams } from "react-router";
+import { EntryListSchema } from "../../../shared/api/schemas.ts";
 import type { AccountDto } from "../../../shared/api/types.ts";
 import { formatMoney } from "../../../shared/money/formatMoney.ts";
+import { fetchQuery } from "../../../shared/query/queryStore.ts";
 import type { RequestState } from "../../../shared/types.ts";
 import styles from "./AccountsTable.module.css";
 
@@ -61,6 +63,13 @@ const AccountsTable = ({ accountsState, onRetry, isRevalidatingAccounts }: Accou
                   to={{
                     pathname: `/accounts/${acc.id}`,
                     search: direction ? `?direction=${direction}` : "",
+                  }}
+                  onMouseEnter={() => {
+                    void fetchQuery(
+                      `entries:${acc.id}`,
+                      `/api/accounts/${acc.id}/entries`,
+                      EntryListSchema,
+                    );
                   }}
                 >
                   {acc.name}
