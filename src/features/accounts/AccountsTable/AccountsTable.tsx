@@ -13,7 +13,7 @@ type AccountsTableProps = {
 };
 
 const AccountsTable = ({ accountsState, onRetry, isRevalidatingAccounts }: AccountsTableProps) => {
-  const [searchParams, _] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const { accountId } = useParams();
 
   const direction = searchParams.get("direction");
