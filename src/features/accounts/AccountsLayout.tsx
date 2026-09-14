@@ -27,7 +27,17 @@ export default function AccountsLayout() {
       </Panel>
       <div className={styles.rightColumn}>
         <Outlet />
-        {/*  This form is mounted here because this layout never unmounts when a use clicks between different accounts in the account table. The form local state will survive navigation*/}
+        {/*
+  R8 / REM-V UX Decision:
+  The Transfer form is mounted in the persistent layout rather than as a route.
+  It acts as an independent workspace: its `fromAccountId` and `toAccountId`
+  selections are driven by its own local dropdowns, completely decoupled from
+  the currently viewed `:accountId` in the URL.
+
+  This intentionally allows users to safely persist an in-progress transfer
+  draft while freely navigating between different account ledgers in the sidebar
+  to check balances.
+*/}
         <Panel title="New Transfer">
           <TransferForm
             accounts={accounts}
