@@ -12,6 +12,7 @@ type CacheEntry<T> = {
   url: string;
   schema: z.ZodSchema<T>;
   emptyAt: number | null;
+  abortController: AbortController | null;
 };
 
 const cache = new Map<string, CacheEntry<unknown>>();
@@ -43,6 +44,9 @@ export const subscribe = (key: string, listener: () => void) => {
       const entry = cache.get(key);
       if (entry) {
         entry.emptyAt = Date.now();
+        entry.abortController?.abort();
+        entry.inFlight = null;
+        entry.abortController = null;
       }
     }
   };
@@ -58,7 +62,7 @@ export const getSnapshot = <T>(key: string): RequestState<T> => {
   return entry.state as RequestState<T>;
 };
 
-export const fetchQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>) => {
+export const fetchQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>): Promise<void> => {
   const now = Date.now();
   let entry = cache.get(key);
 
@@ -70,13 +74,15 @@ export const fetchQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>) 
       url,
       schema,
       emptyAt: null,
+      abortController: null,
     };
     cache.set(key, entry);
+    startGc();
     emit(key);
   } else {
     const isFresh = now - entry.fetchAt < STALE_TIME;
 
-    if (isFresh && !entry.inFlight) return;
+    if (isFresh && !entry.inFlight) return Promise.resolve();
 
     entry.url = url;
     entry.schema = schema;
@@ -85,28 +91,32 @@ export const fetchQuery = <T>(key: string, url: string, schema: z.ZodSchema<T>) 
   // Deduplication lock
   if (entry.inFlight) return entry.inFlight;
 
+  const activeEntry = entry;
+  const controller = new AbortController();
+
+  entry.abortController = controller;
+  const signal = controller.signal;
+
   // Network call
   const promise = (async () => {
     try {
-      const data = await getJson(url, schema);
-
-      if (entry) {
-        entry.state = { status: "success", data };
-        entry.fetchAt = Date.now();
-        emit(key);
-      }
+      const data = await getJson(url, schema, { signal });
+      activeEntry.state = { status: "success", data };
+      activeEntry.fetchAt = Date.now();
+      emit(key);
     } catch (err) {
-      if (entry) {
-        entry.state = { status: "error", message: toMessage(err) };
+      if (signal.aborted) {
+        return;
       }
+      activeEntry.state = { status: "error", message: toMessage(err) };
       emit(key);
     } finally {
-      if (entry) {
-        entry.inFlight = null;
+      if (activeEntry.abortController === controller) {
+        activeEntry.inFlight = null;
       }
     }
   })();
-  entry.inFlight = promise;
+  activeEntry.inFlight = promise;
   emit(key);
   return promise;
 };
@@ -127,17 +137,32 @@ export const getIsRevalidating = (key: string): boolean => {
 };
 
 const GC_TIME = 300_000;
+let gcIntervalId: ReturnType<typeof setInterval> | null = null;
+const GC_TICK_RATE = Math.floor(GC_TIME / 10);
 
-setInterval(() => {
-  for (const [key, entry] of cache.entries()) {
-    if (entry?.emptyAt && !entry.inFlight) {
-      if (Date.now() - entry.emptyAt > GC_TIME) {
-        cache.delete(key);
-        listeners.delete(key);
-      }
-    }
+export const stopGc = () => {
+  if (gcIntervalId) {
+    clearInterval(gcIntervalId);
+    gcIntervalId = null;
   }
-}, 1000);
+};
+
+const startGc = () => {
+  if (!gcIntervalId) {
+    gcIntervalId = setInterval(() => {
+      for (const [key, entry] of cache.entries()) {
+        if (entry.emptyAt && !entry.inFlight) {
+          if (Date.now() - entry.emptyAt > GC_TIME) {
+            cache.delete(key);
+            listeners.delete(key);
+          }
+        }
+      }
+      if (cache.size === 0) stopGc();
+    }, GC_TICK_RATE);
+    (gcIntervalId as unknown as { unref?: () => void }).unref?.();
+  }
+};
 
 declare global {
   interface Window {
