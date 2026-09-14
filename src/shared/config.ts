@@ -1,1 +1,1 @@
-export const CURRENT_LCX_RUNG = 3;
+export const CURRENT_LCX_RUNG = 5;
