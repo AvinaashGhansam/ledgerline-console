@@ -13,6 +13,7 @@ type CacheEntry<T> = {
   schema: z.ZodSchema<T>;
   emptyAt: number | null;
   abortController: AbortController | null;
+  abortTimeoutId?: number;
 };
 
 const cache = new Map<string, CacheEntry<unknown>>();
@@ -37,6 +38,11 @@ export const subscribe = (key: string, listener: () => void) => {
     entry.emptyAt = null;
   }
 
+  if (entry?.abortTimeoutId) {
+    clearTimeout(entry.abortTimeoutId);
+    entry.abortTimeoutId = undefined;
+  }
+
   return () => {
     listeners.get(key)?.delete(listener);
     const keyListeners = listeners.get(key);
@@ -44,9 +50,12 @@ export const subscribe = (key: string, listener: () => void) => {
       const entry = cache.get(key);
       if (entry) {
         entry.emptyAt = Date.now();
-        entry.abortController?.abort();
-        entry.inFlight = null;
-        entry.abortController = null;
+        if (entry.inFlight && entry.abortController) {
+          entry.abortTimeoutId = setTimeout(() => {
+            entry.abortController?.abort();
+            entry.abortTimeoutId = undefined;
+          }, 200);
+        }
       }
     }
   };
