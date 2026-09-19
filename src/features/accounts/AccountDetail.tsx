@@ -19,34 +19,49 @@ const AccountDetail = () => {
     isRevalidating: entriesRevalidate,
   } = useQuery(`entries:${accountId}`, `/api/accounts/${accountId}/entries`, EntryListSchema);
 
-  if (accountsState.status === "loading") {
-    return <div>Loading...</div>;
+  const activeAccount =
+    accountsState.status === "success"
+      ? accountsState.data.find((acc) => acc.id === accountId)
+      : null;
+
+  let accountTitle: string;
+  switch (accountsState.status) {
+    case "loading": {
+      accountTitle = "Loading account...";
+      break;
+    }
+    case "error": {
+      accountTitle = "Account Error";
+      break;
+    }
+    case "success": {
+      if (activeAccount) {
+        accountTitle = `Account: ${activeAccount.name}`;
+      } else {
+        accountTitle = "Account Not Found";
+      }
+      break;
+    }
   }
 
-  if (accountsState.status === "error") {
-    return (
-      <div>
-        <p>{accountsState.message}</p>
-        <button type="button" onClick={accountRetry}>
-          Retry
-        </button>
-      </div>
-    );
-  }
-
-  const activeAccount = accountsState.data.find((acc) => acc.id === accountId);
-
-  if (!activeAccount) {
-    return <div>Account Not Found</div>;
-  }
-
+  const isConfirmedNotFound = accountsState.status === "success" && !activeAccount;
   return (
-    <Panel title={`Account: ${activeAccount.name}`}>
-      <EntriesPanel
-        entriesState={entriesState}
-        onRetry={entriesRetry}
-        isRevalidatingEntries={entriesRevalidate}
-      />
+    <Panel title={accountTitle}>
+      {accountsState.status === "error" && (
+        <div>
+          <p>{accountsState.message}</p>
+          <button type="button" onClick={accountRetry}>
+            Retry
+          </button>
+        </div>
+      )}
+      {!isConfirmedNotFound && (
+        <EntriesPanel
+          entriesState={entriesState}
+          onRetry={entriesRetry}
+          isRevalidatingEntries={entriesRevalidate}
+        />
+      )}
     </Panel>
   );
 };
