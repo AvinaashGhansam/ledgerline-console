@@ -1,0 +1,9 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  padding: var(--space-24);
+  background-color: var(--color-canvas);
+  color: var(--color-text);
+}

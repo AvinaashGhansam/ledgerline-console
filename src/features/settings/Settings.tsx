@@ -1,5 +1,7 @@
+import styles from "./Settings.module.css";
+
 const Settings = () => {
-  return <div>Settings</div>;
+  return <div className={styles.settingsContainer}>Settings</div>;
 };
 
 export default Settings;

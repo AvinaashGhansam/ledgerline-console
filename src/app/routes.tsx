@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router";
+import EmptyState from "../components/EmptyState/EmptyState.tsx";
 import AccountDetail from "../features/accounts/AccountDetail.tsx";
 import AccountsLayout from "../features/accounts/AccountsLayout.tsx";
 import RootLayout from "./RootLayout.tsx";
@@ -17,7 +18,7 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
-            element: <div>Select an account from the sidebar to view entries</div>,
+            element: <EmptyState>Select an account from the sidebar to view entries</EmptyState>,
           },
           {
             path: ":accountId",
@@ -35,7 +36,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "*",
-        element: <div style={{ padding: "20px" }}>404 - Not Found Catch-All</div>,
+        element: <EmptyState>404 - Not Found</EmptyState>,
       },
     ],
   },
